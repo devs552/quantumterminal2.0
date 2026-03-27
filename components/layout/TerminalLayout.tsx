@@ -19,7 +19,7 @@ export function TerminalLayout({ children }: TerminalLayoutProps) {
     leftSidebarWidth,
     rightPanelWidth,
     isLoading,
-  onLogout,
+    onLogout,
   } = useDashboardStore();
 
   useEffect(() => {
