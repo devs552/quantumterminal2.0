@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  name          String?
+  password      String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  dashboards    Dashboard[]
+  watchlists    Watchlist[]
+  alerts        Alert[]
+  
+  @@map("users")
+}
+
+// Dashboard Configuration
+model Dashboard {
+  id            String     @id @default(cuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  layout        Json       // Stores layout configuration
+  visibleLayers String[]   // Array of visible map layers
+  filters       Json       // Stores active filters
+  isDefault     Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  @@map("dashboards")
+}
+
+// Watchlists
+model Watchlist {
+  id            String     @id @default(cuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  assets        String[]   // Array of asset symbols (BTC, SPX, etc.)
+  assetType     String     // "crypto", "equity", "commodity"
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  @@map("watchlists")
+}
+
+// User Alerts
+model Alert {
+  id            String     @id @default(cuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetSymbol   String
+  condition     String     // "price_above", "price_below", "volatility_high", etc.
+  threshold     Float
+  isActive      Boolean    @default(true)
+  lastTriggered DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  @@map("alerts")
+}
+
+// Market Data Snapshots
+model MarketSnapshot {
+  id            String     @id @default(cuid())
+  symbol        String     @index
+  open          Float
+  high          Float
+  low           Float
+  close         Float      @default(0)
+  volume        Float
+  change        Float
+  changePercent Float
+  timestamp     DateTime   @default(now())
+  
+  @@map("market_snapshots")
+}
+
+// Crypto Data Snapshots
+model CryptoSnapshot {
+  id            String     @id @default(cuid())
+  symbol        String     @index
+  price         Float
+  marketCap     Float?
+  volume24h     Float?
+  change24h     Float?
+  dominance     Float?
+  timestamp     DateTime   @default(now())
+  
+  @@map("crypto_snapshots")
+}
+
+// Macro Economic Indicators
+model MacroIndicator {
+  id            String     @id @default(cuid())
+  indicator     String     @index // "CPI", "GDP", "unemployment", etc.
+  country       String
+  value         Float
+  unit          String
+  period        String     // "monthly", "quarterly", "yearly"
+  releaseDate   DateTime
+  forecastValue Float?
+  previousValue Float?
+  timestamp     DateTime   @default(now())
+  
+  @@map("macro_indicators")
+}
+
+// News Articles
+model NewsArticle {
+  id            String     @id @default(cuid())
+  title         String
+  description   String?
+  content       String?
+  source        String
+  sourceUrl     String     @unique
+  author        String?
+  imageUrl      String?
+  sentiment     String     // "positive", "negative", "neutral"
+  sentimentScore Float     // -1 to 1
+  relevantAssets String[]  // Assets mentioned
+  region        String?    // Geographic region
+  category      String[]   // "markets", "geopolitics", "tech", etc.
+  publishedAt   DateTime
+  createdAt     DateTime   @default(now())
+  
+  @@index([sentiment])
+  @@index([publishedAt])
+  @@map("news_articles")
+}
+
+// Conflict Events (UCDP)
+model ConflictEvent {
+  id            String     @id @default(cuid())
+  eventId       String     @unique
+  date          DateTime   @index
+  location      String
+  latitude      Float
+  longitude     Float
+  country       String
+  eventType     String     // "battle", "violence", "protest", etc.
+  deathCount    Int        @default(0)
+  actors        String[]   // Groups involved
+  description   String?
+  severity      Int        // 1-5 scale
+  timestamp     DateTime   @default(now())
+  
+  @@map("conflict_events")
+}
+
+// Map Layers Metadata
+model MapLayer {
+  id            String     @id @default(cuid())
+  name          String     @unique
+  displayName   String
+  description   String?
+  layerType     String     // "geojson", "raster", "heatmap"
+  dataSource    String
+  dataUrl       String?
+  updateFrequency String   // "realtime", "hourly", "daily"
+  isVisible     Boolean    @default(true)
+  color         String     // Hex color for layer
+  opacity       Float      @default(1)
+  intensity     Float      @default(1)
+  metadata      Json
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  @@map("map_layers")
+}
+
+// Risk Assessments
+model RiskAssessment {
+  id            String     @id @default(cuid())
+  region        String
+  country       String?
+  riskType      String     // "geopolitical", "market", "climate", "cyber"
+  riskScore     Float      // 0-100
+  factors       Json       // Breakdown of contributing factors
+  trend         String     // "increasing", "stable", "decreasing"
+  timestamp     DateTime   @default(now())
+  
+  @@index([region])
+  @@index([timestamp])
+  @@map("risk_assessments")
+}
+
+// Intelligence Feed Events
+model IntelligenceFeed {
+  id            String     @id @default(cuid())
+  title         String
+  description   String
+  severity      Int        // 1-5 scale
+  category      String     // "conflict", "market", "infrastructure", "climate"
+  region        String
+  country       String?
+  latitude      Float?
+  longitude     Float?
+  aiSummary     String?
+  aiRiskScore   Float?
+  source        String
+  relatedAssets String[]   // Affected assets/sectors
+  timestamp     DateTime   @default(now())
+  
+  @@index([severity])
+  @@index([timestamp])
+  @@map("intelligence_feed")
+}
+
+// Sector Performance Data
+model SectorPerformance {
+  id            String     @id @default(cuid())
+  sector        String     @index
+  performance   Float
+  dayHigh       Float
+  dayLow        Float
+  marketCap     Float?
+  volume        Float?
+  topMovers     Json       // Top movers in sector
+  timestamp     DateTime   @default(now())
+  
+  @@map("sector_performance")
+}
+
+// Commodity Prices
+model CommodityPrice {
+  id            String     @id @default(cuid())
+  symbol        String     @index // "GOLD", "OIL", etc.
+  price         Float
+  change        Float
+  changePercent Float
+  trend         String
+  timestamp     DateTime   @default(now())
+  
+  @@map("commodity_prices")
+}
+
+// Geopolitical Events
+model GeopoliticalEvent {
+  id            String     @id @default(cuid())
+  title         String
+  description   String
+  country       String
+  region        String
+  latitude      Float
+  longitude     Float
+  eventType     String     // "military", "diplomatic", "protest", "disaster"
+  severity      Int
+  impact        String     // "low", "medium", "high", "critical"
+  sources       String[]
+  timestamp     DateTime   @default(now())
+  
+  @@index([severity])
+  @@map("geopolitical_events")
+}

@@ -1,0 +1,77 @@
+PROJECT STRUCTURE
+Generated for MALIK'S QUANTUM TERMINAL
+
+app/
+  - layout.tsx (root layout)
+  - page.tsx (main terminal)
+  - globals.css (design tokens)
+  
+components/
+  layout/
+    - TopBar.tsx
+    - LeftSidebar.tsx
+    - RightPanel.tsx
+    - TerminalLayout.tsx
+  
+  map/
+    - GlobalMap.tsx
+    - LayerControl.tsx
+    - MapLegend.tsx
+    - GeoJsonLayers.ts
+  
+  dashboards/
+    - MarketsTab.tsx
+    - CryptoTab.tsx
+    - MacroTab.tsx
+    - IntelligenceTab.tsx
+  
+  charts/
+    - TradingViewChart.tsx
+    - MacroHeatmap.tsx
+    - SectorHeatmap.tsx
+    - FlowChart.tsx
+  
+  ai/
+    - AIInsights.tsx
+    - RiskScoreCard.tsx
+    - AIAnalysis.tsx
+  
+  feeds/
+    - IntelFeed.tsx
+    - NewsTicker.tsx
+  
+  ui/
+    - AlertBadge.tsx
+    - StatCard.tsx
+    - DataTable.tsx
+
+store/
+  - dashboardStore.ts (Zustand)
+  - mapStore.ts
+  - alertStore.ts
+  - userStore.ts
+
+api/
+  - markets/route.ts
+  - crypto/route.ts
+  - macro/route.ts
+  - news/route.ts
+  - ai/route.ts (AI analysis)
+  - ws/route.ts (WebSocket)
+
+services/
+  - dataProvider.ts (API polling)
+  - aiService.ts (OpenAI integration)
+  - websocketManager.ts
+  - cacheManager.ts
+  - riskScorer.ts
+
+lib/
+  - utils.ts (existing)
+  - mockData.ts
+  - constants.ts
+  - validators.ts
+
+prisma/
+  - schema.prisma
+  - migrations/
