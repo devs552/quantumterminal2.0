@@ -6,6 +6,9 @@ import { SpotMarket } from './SpotMarket';
 import { DerivativesMarket } from './Derivativesmarket';
 import CryptoCountTab from './Cryptocounttab';
 import BitcoinTreasuriesTab from './Bitcointreasuriestab';
+import FearGreedTab from './FearGreedTab';
+import AltcoinSeasonTab from './AltCoinSeasonTab';
+import MarketCycleTab from './MarketCycleTab';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -57,7 +60,7 @@ interface CryptoApiResponse {
 ];
 
 type SortKey = 'dominance' | 'change';
-type CryptoSubTab = 'pro' | 'flow' | 'cmp' | 'spot' | 'derivatives' | 'CryptoCount'| 'bitcoinTreasury';
+type CryptoSubTab = 'pro' | 'flow' | 'cmp' | 'spot' | 'derivatives' | 'CryptoCount'| 'bitcoinTreasury' | 'fearGreed' | 'altcoinSeason' | 'marketcycleindicators';
 
 const TV_SYMBOL_MAP: Record<string, string> = {
   BTC:  'BINANCE:BTCUSDT',
@@ -793,7 +796,11 @@ export function CryptoTab() {
     {id:'spot' as CryptoSubTab, label: 'Spot vs Futures',  icon: '⚖️' },
      { id: 'derivatives' as CryptoSubTab, label: 'Derivatives',      icon: '📉' },
      { id: 'CryptoCount' as CryptoSubTab, label: 'Crypto Count', icon: '🔢' },
-     {id:'bitcoinTreasury', label: 'Bitcoin Treasury', icon: '🏦'}
+     {id:'bitcoinTreasury', label: 'Bitcoin Treasury', icon: '🏦'},
+   
+     {id:'fearGreed', label: 'Fear & Greed', icon: '😰'},
+     {id:'altcoinSeason', label: 'Altcoin Season', icon: '🌗'},
+     {id:'marketcycleindicators', label: 'Market Cycle Indicators', icon: '📊'},
   ];
 
   const selBtn = (active: boolean) =>
@@ -1081,6 +1088,11 @@ export function CryptoTab() {
 {activeSubTab === 'bitcoinTreasury' && (
   <BitcoinTreasuriesTab  />
 )}
+{activeSubTab === 'fearGreed' && (
+ <FearGreedTab />
+)}
+{activeSubTab === "altcoinSeason" &&  (<AltcoinSeasonTab />)}
+{activeSubTab === "marketcycleindicators" &&  (<MarketCycleTab />)}
       </div>
     </div>
   );
