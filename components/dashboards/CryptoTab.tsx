@@ -9,6 +9,18 @@ import BitcoinTreasuriesTab from './Bitcointreasuriestab';
 import FearGreedTab from './FearGreedTab';
 import AltcoinSeasonTab from './AltCoinSeasonTab';
 import MarketCycleTab from './MarketCycleTab';
+import BtcDominanceTab from './Btcdominancetab';
+import CMCIndexDashboard from './cmc-index-dashboard';
+import CryptoETFTab from './Cryptoetftab';
+import FundingRatesTab from './Fundingratestab';
+import LiqRsiDashboard from './Liqrsidashboard';
+import MACDDashboard from './Macddashboard';
+import HeatmapDOMDashboard from './HeatmapDOMDashboard';
+import CandlestickDashboard from './CandlestickDashboard';
+import FootprintDashboard from './FootprintDashboard';
+import TimeAndSalesDashboard from './TimeAndSalesDashboard';
+import DOMDashboard from './DOMDashboard';
+import ComparisonDashboard from './ComparisonDashboard';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -60,7 +72,7 @@ interface CryptoApiResponse {
 ];
 
 type SortKey = 'dominance' | 'change';
-type CryptoSubTab = 'pro' | 'flow' | 'cmp' | 'spot' | 'derivatives' | 'CryptoCount'| 'bitcoinTreasury' | 'fearGreed' | 'altcoinSeason' | 'marketcycleindicators';
+type CryptoSubTab = 'pro' | 'flow' | 'cmp' | 'spot' | 'derivatives' | 'CryptoCount'| 'bitcoinTreasury' | 'fearGreed' | 'altcoinSeason' | 'marketcycleindicators' | 'btcDominance' | 'coinmarketcapindex' | 'etfs' | 'fundingRates' | 'liquidations' | 'macd' | 'heatmap' | 'candlestick' | 'footprint' | 'timesales' | 'dom' | 'comparison';
 
 const TV_SYMBOL_MAP: Record<string, string> = {
   BTC:  'BINANCE:BTCUSDT',
@@ -801,7 +813,20 @@ export function CryptoTab() {
      {id:'fearGreed', label: 'Fear & Greed', icon: '😰'},
      {id:'altcoinSeason', label: 'Altcoin Season', icon: '🌗'},
      {id:'marketcycleindicators', label: 'Market Cycle Indicators', icon: '📊'},
-  ];
+     {id:'btcDominance', label: 'BTC Dominance', icon: '₿'},
+     {id:'coinmarketcapindex', label: 'CMC Index', icon: '📈'},
+     {id:'etfs', label: 'ETFs', icon: '💼'},
+    {id:'fundingRates', label: 'Funding Rates', icon: '💸'},
+    {id:'liquidations', label : 'Liquidations', icon: '⚰️'},
+    {id:'macd', label: 'Moving Average Convergence Divergence', icon: '📉'},
+    // Advanced Trading Charts
+    { id: 'heatmap' as CryptoSubTab, label: 'DOM Heatmap', icon: '🔥' },
+    { id: 'candlestick' as CryptoSubTab, label: 'Candlestick', icon: '📊' },
+    { id: 'footprint' as CryptoSubTab, label: 'Footprint', icon: '🐾' },
+    { id: 'timesales' as CryptoSubTab, label: 'Time & Sales', icon: '⏱️' },
+    { id: 'dom' as CryptoSubTab, label: 'DOM/Ladder', icon: '📍' },
+    { id: 'comparison' as CryptoSubTab, label: 'Comparison', icon: '⚖️' },
+    ];
 
   const selBtn = (active: boolean) =>
     `px-3 py-1.5 text-xs font-mono rounded transition-all border ${
@@ -1093,6 +1118,18 @@ export function CryptoTab() {
 )}
 {activeSubTab === "altcoinSeason" &&  (<AltcoinSeasonTab />)}
 {activeSubTab === "marketcycleindicators" &&  (<MarketCycleTab />)}
+{activeSubTab === "btcDominance" &&  (<BtcDominanceTab />)}
+{activeSubTab === "coinmarketcapindex" &&  (<CMCIndexDashboard />)  }
+{activeSubTab === "etfs" &&  (<CryptoETFTab />)  }
+{activeSubTab === "fundingRates" &&  (<FundingRatesTab />)  }
+{activeSubTab === "liquidations" &&  (<LiqRsiDashboard />)  }
+{activeSubTab === "macd" &&  (<MACDDashboard />)  }
+{activeSubTab === 'heatmap' && (<HeatmapDOMDashboard />)}
+{activeSubTab === 'candlestick' && (<CandlestickDashboard />)}
+{activeSubTab === 'footprint' && (<FootprintDashboard />)}
+{activeSubTab === 'timesales' && (<TimeAndSalesDashboard />)}
+{activeSubTab === 'dom' && (<DOMDashboard />)}
+{activeSubTab === 'comparison' && (<ComparisonDashboard />)}
       </div>
     </div>
   );

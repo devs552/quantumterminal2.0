@@ -109,6 +109,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: <Cpu className="h-4 w-4" />,
     description: 'AI insights & predictions',
   },
+  {id: 'sattelite-imagery',
+    label: 'Sattelite Imagery',
+    icon: <Layers className="h-4 w-4" />,
+    description: 'Global satellite imagery & analysis',
+  },
+   
 ];
 
 // ─── Sub-nav item ─────────────────────────────────────────────────────────────

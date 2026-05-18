@@ -281,3 +281,188 @@ export interface ClimateAnomaly {
   description: string;
   timestamp: string;
 }
+
+// ── Advanced Trading Types ──────────────────────────────────────────────────────
+
+// Trade Data (tick-level)
+export interface Trade {
+  id: string;
+  symbol: string;
+  price: number;
+  quantity: number;
+  side: "buy" | "sell";
+  timestamp: number;
+  exchange: "binance" | "bybit" | "hyperliquid" | "okx";
+  aggId?: string;
+  isBuyerMaker?: boolean;
+}
+
+// Order Book (L2 data)
+export interface OrderBookLevel {
+  price: number;
+  quantity: number;
+  count?: number; // number of orders at this level
+}
+
+export interface OrderBook {
+  symbol: string;
+  timestamp: number;
+  bids: OrderBookLevel[];
+  asks: OrderBookLevel[];
+  nanoTimestamp?: number; // for high-precision timing
+}
+
+// Candlestick / Kline
+export interface Kline {
+  symbol: string;
+  interval: string;
+  openTime: number;
+  closeTime: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  quoteVolume: number;
+  trades?: number;
+}
+
+// Heatmap / DOM (time-series price-volume)
+export interface HeatmapCell {
+  price: number;
+  priceGrouping: number;
+  timeAggregation: string;
+  volume: number;
+  buyVolume?: number;
+  sellVolume?: number;
+  imbalance?: number; // buy/sell ratio
+}
+
+export interface DOMHeatmapData {
+  symbol: string;
+  timeRange: [number, number]; // [startTime, endTime]
+  data: HeatmapCell[];
+  priceRange: [number, number]; // [minPrice, maxPrice]
+  aggregationMethod: "sum" | "avg" | "count";
+}
+
+// Footprint (trades aggregated on candlestick)
+export interface FootprintBar {
+  kline: Kline;
+  trades: Trade[];
+  priceGrouping: number;
+  priceProfiles: Record<number, number>; // price -> volume
+  buyProfile?: Record<number, number>;
+  sellProfile?: Record<number, number>;
+  pointOfControl?: number;
+  imbalanceStudy?: Record<number, number>; // price -> imbalance value
+  nakedPOC?: number[];
+  clusteringMethod?: "none" | "order-book" | "delta" | "imbalance";
+}
+
+// Time & Sales (recent trades)
+export interface TimeSalesEntry extends Trade {
+  displayPrice: string;
+  displayQuantity: string;
+  displayTime: string;
+}
+
+// Volume Profile (aggregated by price)
+export interface VolumeProfile {
+  symbol: string;
+  timeRange: [number, number];
+  profileType: "fixed-range" | "visible-range";
+  priceRange?: [number, number]; // for fixed range
+  priceProfiles: Record<number, number>; // price -> volume
+  pointOfControl?: number;
+  valueArea?: {
+    high: number;
+    low: number;
+    volume: number;
+  };
+}
+
+// Comparison chart data
+export interface ComparisonSeriesPoint {
+  time: number;
+  price: number;
+  normalized: number; // percentage change from base
+}
+
+export interface ComparisonSeries {
+  symbol: string;
+  label?: string;
+  color?: string;
+  basePrice: number;
+  data: ComparisonSeriesPoint[];
+}
+
+// Exchange connector configuration
+export interface ExchangeConfig {
+  name: "binance" | "bybit" | "hyperliquid" | "okx";
+  apiKey?: string;
+  apiSecret?: string;
+  testnet?: boolean;
+  rateLimit?: number; // requests per second
+}
+
+// WebSocket subscription config
+export interface SubscriptionConfig {
+  exchange: string;
+  symbol: string;
+  channels: ("trades" | "klines" | "orderbook")[];
+  interval?: string; // for klines
+  depth?: number; // for orderbook (e.g., 5, 10, 20)
+}
+
+// Historical trade fetch config
+export interface TradeHistoryConfig {
+  exchange: "binance" | "bybit" | "hyperliquid" | "okx";
+  symbol: string;
+  startTime: number;
+  endTime: number;
+  limit?: number;
+  method?: "binance-vision" | "rest-api"; // for Binance
+}
+
+// Audio notification config
+export interface AudioConfig {
+  enabled: boolean;
+  volumePercentage: number;
+  triggers: {
+    largeVolume?: { threshold: number; sound: string };
+    priceBreakout?: { threshold: number; sound: string };
+    orderImbalance?: { threshold: number; sound: string };
+    liquidation?: { sound: string };
+  };
+}
+
+// Layout persistence
+export interface TradingLayout {
+  id: string;
+  name: string;
+  panes: Array<{
+    id: string;
+    type: "heatmap" | "candlestick" | "footprint" | "timesales" | "dom" | "comparison";
+    symbol: string;
+    config: Record<string, any>;
+    position: { x: number; y: number; width: number; height: number };
+  }>;
+  linkedPanes?: string[]; // pane IDs that are linked for ticker changes
+  theme?: string;
+}
+
+// Theme configuration
+export interface ThemeConfig {
+  name: string;
+  colors: {
+    bullCandle: string;
+    bearCandle: string;
+    buyVolume: string;
+    sellVolume: string;
+    gridLines: string;
+    textPrimary: string;
+    textSecondary: string;
+    background: string;
+  };
+}

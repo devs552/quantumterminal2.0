@@ -24,7 +24,8 @@ export type TabType =
   | 'sattelite'  
   | 'cabels'
   | 'warzones'
-  | 'settings';
+  | 'settings'
+| 'sattelite-imagery';
 
 export type MarketSubTab = 'summary' | 'sectors' | 'heatmap' | 'screener' | 'correlation' | 'grid';
 export type CryptoSubTab = 'pro' | 'flow';

@@ -19,6 +19,7 @@ import TransportTab from '@/components/dashboards/Transporttab';
 import SatelliteTab from '@/components/dashboards/Satellitetab ';
 import CablesTab from '@/components/dashboards/Cablestab';
 import WarzonesTab from '@/components/dashboards/Warzonestab';
+import SatelliteImageryTab from '@/components/dashboards/SatelliteImageryTab';
 
 // ── Authenticated shell ───────────────────────────────────────────────────────
 // Separated into its own component so that useLiveAlerts (and ALL hooks) only
@@ -54,9 +55,10 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
       case 'transport':            return <TransportTab />;
    
       case 'sattelite':            return <SatelliteTab />;
- 
+   
       case 'cabels':               return <CablesTab />;
       case 'warzones':             return <WarzonesTab />;
+      case 'sattelite-imagery':     return <SatelliteImageryTab />;
       default:                     return <GlobalMap />;
     }
   };
