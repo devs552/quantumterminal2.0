@@ -40,7 +40,7 @@ interface FootprintBar {
   profiles: Record<number, number>;
 }
 
-export default function FootprintDashboard() {
+export default function FootprintDashboard({ selectedSymbol }: { selectedSymbol?: string }) {
   const [settings, setSettings] = useState<FootprintSettings>({
     exchange: 'binance',
     symbol: 'BTCUSDT',

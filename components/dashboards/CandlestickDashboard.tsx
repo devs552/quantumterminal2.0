@@ -33,7 +33,7 @@ interface CandlestickSettings {
   ma2?: number;
 }
 
-export default function CandlestickDashboard() {
+export default function CandlestickDashboard({ selectedSymbol }: { selectedSymbol?: string }) {
   const [settings, setSettings] = useState<CandlestickSettings>({
     exchange: 'binance',
     symbol: 'BTCUSDT',

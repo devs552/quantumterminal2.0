@@ -39,7 +39,7 @@ const DEFAULT_EXCHANGES: ComparisonSettings['exchanges'] = [
   { exchange: 'binance', symbol: 'ETHUSDT', color: '#10b981', label: 'ETH' },
 ];
 
-export default function ComparisonDashboard() {
+export default function ComparisonDashboard({ selectedSymbol }: { selectedSymbol?: string }) {
   const [settings, setSettings] = useState<ComparisonSettings>({
     exchanges: DEFAULT_EXCHANGES,
     interval: '1h',

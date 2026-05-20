@@ -1,4 +1,4 @@
-# Malik's Quantum Terminal - Setup & Installation Guide
+# Quantum Intelligence Hub - Setup & Installation Guide
 
 ## Prerequisites
 

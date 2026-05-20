@@ -95,6 +95,61 @@ const INTERVALS = [
   { label: '1W', value: 'W'   },
 ];
 
+// ── Ticker Selector Component ────────────────────────────────────────────────
+
+function CurrencyTickerSelector({ 
+  selectedSymbol, 
+  onSymbolChange,
+  cryptos,
+}: { 
+  selectedSymbol: string;
+  onSymbolChange: (symbol: string) => void;
+  cryptos: CryptoAsset[];
+}) {
+  const selBtn = (active: boolean) =>
+    `px-2 py-1 text-xs font-mono rounded transition-all border ${
+      active
+        ? 'bg-[#00D9FF]/20 text-[#00D9FF] border-[#00D9FF]/40 font-bold shadow-[0_0_8px_rgba(0,217,255,0.4)]'
+        : 'text-[#7A8391] border-[#00D9FF]/10 hover:border-[#00D9FF]/50 hover:text-[#00D9FF] bg-[#1A1F3A]/30'
+    }`;
+
+  const tvSym = Object.entries(TV_SYMBOL_MAP).find(([, v]) => v === selectedSymbol)?.[0];
+  
+  return (
+    <div className="glass-panel px-4 py-3 flex items-center gap-4 flex-wrap">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-[#7A8391] font-mono uppercase tracking-wider">💱 TICKERS</span>
+        <div className="flex gap-1.5 flex-wrap">
+          {Object.entries(TV_SYMBOL_MAP).map(([sym, tvSym]) => {
+            const asset = cryptos.find(c => c.symbol?.toUpperCase() === sym);
+            const isActive = selectedSymbol === tvSym;
+            return (
+              <button
+                key={sym}
+                onClick={() => onSymbolChange(tvSym)}
+                title={asset ? `${fmt(asset.price)} · ${(asset.change24h ?? 0) >= 0 ? '+' : ''}${asset.change24h?.toFixed(2)}%` : sym}
+                className={`${selBtn(isActive)} flex items-center gap-1 group`}
+              >
+                <span>{sym}</span>
+                {asset && (
+                  <span className={`text-[10px] opacity-0 group-hover:opacity-100 transition-opacity ${(asset.change24h ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {(asset.change24h ?? 0) >= 0 ? '↑' : '↓'}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {tvSym && (
+        <div className="ml-auto text-xs font-mono text-[#00D9FF]">
+          Selected: <span className="font-bold">{tvSym}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number | undefined | null): string {
@@ -390,11 +445,12 @@ function ETFNetflowChart({ data }: {
 // Mock ETF netflow data
 
 
-function CMPTab({ cryptos, summary, source, loading }: {
+function CMPTab({ cryptos, summary, source, loading, selectedSymbol }: {
   cryptos: CryptoAsset[];
   summary: ApiSummary | null;
   source?: 'coingecko' | 'mock';
   loading: boolean;
+  selectedSymbol?: string;
 }) {
   const [gasPrice, setGasPrice] = useState<{ fast: number; standard: number; slow: number } | null>(null);
   const [gasLoading, setGasLoading] = useState(true);
@@ -868,6 +924,15 @@ export function CryptoTab() {
 
       {/* ── Content ── */}
       <div className="flex-1 overflow-y-auto p-6">
+        {/* ── Currency Ticker Selector (Appears on all tabs) ── */}
+        <div className="mb-6">
+          <CurrencyTickerSelector 
+            selectedSymbol={selectedSymbol}
+            onSymbolChange={setSelectedSymbol}
+            cryptos={cryptos}
+          />
+        </div>
+
         {error && <ErrorBanner msg={error} onRetry={fetchData} />}
 
         {/* ─────────────────── PRO TAB ─────────────────── */}
@@ -1094,6 +1159,7 @@ export function CryptoTab() {
             summary={summary}
             source={source}
             loading={loading}
+            selectedSymbol={selectedSymbol}
           />
         )}
         {activeSubTab === 'spot' && (
@@ -1102,10 +1168,11 @@ export function CryptoTab() {
   summary={summary}
   source={source}
   loading={loading}
+  selectedSymbol={selectedSymbol}
 />
         )}
         {activeSubTab === 'derivatives' && (
-  <DerivativesMarket />
+  <DerivativesMarket selectedSymbol={selectedSymbol} />
 )}
 {activeSubTab === 'CryptoCount' && (
   <CryptoCountTab />
@@ -1117,19 +1184,19 @@ export function CryptoTab() {
  <FearGreedTab />
 )}
 {activeSubTab === "altcoinSeason" &&  (<AltcoinSeasonTab />)}
-{activeSubTab === "marketcycleindicators" &&  (<MarketCycleTab />)}
+{activeSubTab === "marketcycleindicators" &&  (<MarketCycleTab selectedSymbol={selectedSymbol} />)}
 {activeSubTab === "btcDominance" &&  (<BtcDominanceTab />)}
 {activeSubTab === "coinmarketcapindex" &&  (<CMCIndexDashboard />)  }
 {activeSubTab === "etfs" &&  (<CryptoETFTab />)  }
-{activeSubTab === "fundingRates" &&  (<FundingRatesTab />)  }
-{activeSubTab === "liquidations" &&  (<LiqRsiDashboard />)  }
-{activeSubTab === "macd" &&  (<MACDDashboard />)  }
-{activeSubTab === 'heatmap' && (<HeatmapDOMDashboard />)}
-{activeSubTab === 'candlestick' && (<CandlestickDashboard />)}
-{activeSubTab === 'footprint' && (<FootprintDashboard />)}
-{activeSubTab === 'timesales' && (<TimeAndSalesDashboard />)}
-{activeSubTab === 'dom' && (<DOMDashboard />)}
-{activeSubTab === 'comparison' && (<ComparisonDashboard />)}
+{activeSubTab === "fundingRates" &&  (<FundingRatesTab selectedSymbol={selectedSymbol} />)  }
+{activeSubTab === "liquidations" &&  (<LiqRsiDashboard selectedSymbol={selectedSymbol} />)  }
+{activeSubTab === "macd" &&  (<MACDDashboard selectedSymbol={selectedSymbol} />)  }
+{activeSubTab === 'heatmap' && (<HeatmapDOMDashboard selectedSymbol={selectedSymbol} />)}
+{activeSubTab === 'candlestick' && (<CandlestickDashboard selectedSymbol={selectedSymbol} />)}
+{activeSubTab === 'footprint' && (<FootprintDashboard selectedSymbol={selectedSymbol} />)}
+{activeSubTab === 'timesales' && (<TimeAndSalesDashboard selectedSymbol={selectedSymbol} />)}
+{activeSubTab === 'dom' && (<DOMDashboard selectedSymbol={selectedSymbol} />)}
+{activeSubTab === 'comparison' && (<ComparisonDashboard selectedSymbol={selectedSymbol} />)}
       </div>
     </div>
   );

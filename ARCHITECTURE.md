@@ -1,4 +1,4 @@
-# System Architecture - Malik's Quantum Terminal
+# System Architecture - Quantum Intelligence Hub
 
 ## 🏗️ High-Level Overview
 

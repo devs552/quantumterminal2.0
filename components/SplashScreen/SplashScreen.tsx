@@ -49,7 +49,7 @@ export function SplashScreen({ onComplete, duration = 3200 }: SplashScreenProps)
 
       {/* Main content */}
       <div style={{ position: 'relative', textAlign: 'center' }}>
-        {/* MALIK'S */}
+        {/* QUANTUM */}
         <div
           style={{
             fontSize: 'clamp(12px, 3vw, 18px)',
@@ -62,10 +62,10 @@ export function SplashScreen({ onComplete, duration = 3200 }: SplashScreenProps)
             transition: 'opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s',
           }}
         >
-          MALIK&apos;S
+          QUANTUM
         </div>
 
-        {/* TERMINAL — big glitch text */}
+        {/* HUB — big glitch text */}
         <div style={{ position: 'relative' }}>
           <div
             style={{
@@ -81,7 +81,7 @@ export function SplashScreen({ onComplete, duration = 3200 }: SplashScreenProps)
               zIndex: 2,
             }}
           >
-            TERMINAL
+            INTELLIGENCE HUB
           </div>
 
           {/* Glitch layers */}

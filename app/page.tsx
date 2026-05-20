@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { TerminalLayout } from '@/components/layout/TerminalLayout';
-import { GlobalMap } from '@/components/map/GlobalMap';
+import { GlobalMapContainer } from '@/components/map/GlobalMapContainer';
 import { MarketsTab } from '@/components/dashboards/MarketsTab';
 import { CryptoTab } from '@/components/dashboards/CryptoTab';
 import { MacroTab } from '@/components/dashboards/MacroTab';
@@ -15,12 +15,6 @@ import { LoginPage } from '@/components/auth/LoginPage';
 import { RegisterPage } from '@/components/auth/RegisterPage';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { SplashScreen } from '@/components/SplashScreen/SplashScreen';
-import TransportTab from '@/components/dashboards/Transporttab';
-import SatelliteTab from '@/components/dashboards/Satellitetab ';
-import CablesTab from '@/components/dashboards/Cablestab';
-import WarzonesTab from '@/components/dashboards/Warzonestab';
-import SatelliteImageryTab from '@/components/dashboards/SatelliteImageryTab';
-import FinancialSatelliteTab from '@/components/dashboards/FinancialSatelliteTab';
 
 // ── Authenticated shell ───────────────────────────────────────────────────────
 // Separated into its own component so that useLiveAlerts (and ALL hooks) only
@@ -38,29 +32,36 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'map':                  return <GlobalMap />;
+      case 'map':
+      case 'transport':
+      case 'cabels':
+      case 'sattelite':
+      case 'warzones':
+      case 'sattelite-imagery':
+        return <GlobalMapContainer />;
       case 'markets':
       case 'markets-summary':
       case 'markets-sectors':
       case 'markets-heatmap':
       case 'markets-screener':
-      case 'markets-correlation':  return <MarketsTab />;
+      case 'markets-correlation':
+        return <MarketsTab />;
       case 'crypto':
       case 'crypto-pro':
-      case 'crypto-orderflow':     return <CryptoTab />;
-      case 'macro':                return <MacroTab />;
-      case 'intelligence':         return <IntelligenceTab />;
-      case 'risk':                 return <RiskDashboard />;
-      case 'ai':                   return <AIAnalysisTab />;
-      case 'settings':             return <SettingsTab />;
-      case 'transport':            return <TransportTab />;
-   
-      case 'sattelite':            return <SatelliteTab />;
-   
-      case 'cabels':               return <CablesTab />;
-      case 'warzones':             return <WarzonesTab />;
-      case 'sattelite-imagery':     return <FinancialSatelliteTab />;
-      default:                     return <GlobalMap />;
+      case 'crypto-orderflow':
+        return <CryptoTab />;
+      case 'macro':
+        return <MacroTab />;
+      case 'intelligence':
+        return <IntelligenceTab />;
+      case 'risk':
+        return <RiskDashboard />;
+      case 'ai':
+        return <AIAnalysisTab />;
+      case 'settings':
+        return <SettingsTab />;
+      default:
+        return <GlobalMapContainer />;
     }
   };
 

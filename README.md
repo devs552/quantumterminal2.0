@@ -1,7 +1,7 @@
 <<<<<<< HEAD
 # quantumterminal2.0
 =======
-# ⚡ MALIK'S QUANTUM TERMINAL
+# ⚡ QUANTUM INTELLIGENCE HUB
 
 > **Advanced Global Intelligence, Financial Markets & Geopolitical Analytics Platform**
 
@@ -15,7 +15,7 @@ A production-grade web application combining Bloomberg Terminal, Palantir Gotham
 
 ## 🌍 Platform Overview
 
-Malik's Quantum Terminal is a comprehensive global intelligence platform designed for:
+Quantum Intelligence Hub is a comprehensive global intelligence platform designed for:
 
 - **Financial Analysts** - Real-time market data, crypto tracking, sector heatmaps
 - **Geopolitical Strategists** - Conflict tracking, UCDP events, military activity monitoring

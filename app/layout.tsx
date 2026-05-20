@@ -6,7 +6,7 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Malik\'s Quantum Terminal | Global Intelligence Platform',
+  title: 'Quantum Intelligence Hub | Global Intelligence Platform',
   description: 'Advanced global intelligence, financial markets, geopolitical & AI analytics platform combining Bloomberg Terminal, Palantir Gotham, and CryptoQuant capabilities.',
   generator: 'self',
   viewport: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   keywords: ['intelligence', 'terminal', 'markets', 'crypto', 'analytics', 'geopolitical', 'AI'],
   openGraph: {
-    title: 'Malik\'s Quantum Terminal',
+    title: 'Quantum Intelligence Hub',
     description: 'Global intelligence and financial analytics platform',
     type: 'website',
   },

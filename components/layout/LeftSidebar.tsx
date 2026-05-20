@@ -10,13 +10,8 @@ import {
   AlertTriangle,
   Settings,
   Cpu,
-  Navigation,
-  Layers,
   ChevronRight,
   ChevronDown,
-  Cable,
-  Satellite,
-  PlaneTakeoffIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDashboardStore } from '@/store/dashboardStore';
@@ -46,6 +41,14 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Global Map',
     icon: <Globe className="h-4 w-4" />,
     description: 'Intelligence hotspots & events',
+    children: [
+      { id: 'map', label: 'Main Map' },
+      { id: 'transport', label: 'Transport Intel' },
+      { id: 'cabels', label: 'Cables & Networks' },
+      { id: 'sattelite', label: 'Satellite & Geospatial' },
+      { id: 'warzones', label: 'Warzones' },
+      { id: 'sattelite-imagery', label: 'Satellite Imagery' },
+    ],
   },
   {
     id: 'markets',
@@ -68,24 +71,6 @@ const NAV_ITEMS: NavItem[] = [
     description: 'FRED data, central banks, yields',
   },
   {
-    id: 'transport',
-    label: 'Transport Intel',
-    icon: <Navigation className="h-4 w-4" />,
-    description: 'Flights &  Marines',
-  },
-   {
-    id: 'cabels',
-    label: 'Cabels & Networks',
-    icon: <Cable className="h-4 w-4" />,
-    description: 'Cable networks, infrastructure, connectivity',
-  },
-   {
-    id: 'sattelite',
-    label: 'Sattelite & Geospatial',
-    icon: <Satellite className="h-4 w-4" />,
-    description: 'Satellite imagery, geospatial data',
-  },
-  {
     id: 'intelligence',
     label: 'Intelligence',
     icon: <BookOpen className="h-4 w-4" />,
@@ -98,21 +83,10 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Cascading risk, instability index',
   },
   {
-    id: 'warzones',
-    label: 'WarZones',
-    icon: <PlaneTakeoffIcon className="h-4 w-4" />,
-    description: 'warzones, flashpoints, conflict zones',
-  },
-  {
     id: 'ai',
     label: 'AI Analysis',
     icon: <Cpu className="h-4 w-4" />,
     description: 'AI insights & predictions',
-  },
-  {id: 'sattelite-imagery',
-    label: 'Sattelite Imagery',
-    icon: <Layers className="h-4 w-4" />,
-    description: 'Global satellite imagery & analysis',
   },
    
 ];
@@ -234,7 +208,7 @@ export function LeftSidebar() {
       {/* ── Terminal Header ── */}
       <div className="space-y-2 pb-4 border-b border-[#00D9FF]/20">
         <div className="text-xs font-mono tracking-wider text-[#00D9FF] font-bold">
-          ⚡ MALIK TERMINAL
+          ⚡ QUANTUM INTELLIGENCE HUB
         </div>
         <div className="space-y-1 text-xs font-mono">
           {[

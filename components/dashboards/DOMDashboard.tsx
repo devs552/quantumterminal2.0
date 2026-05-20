@@ -32,7 +32,7 @@ interface DOMLevel {
   spreadPercent: number;
 }
 
-export default function DOMDashboard() {
+export default function DOMDashboard({ selectedSymbol }: { selectedSymbol?: string }) {
   const [settings, setSettings] = useState<DOMSettings>({
     exchange: 'binance',
     symbol: 'BTCUSDT',

@@ -386,7 +386,7 @@ function HistRow({ label, futures, perpetuals, currentFutures, currentPerps }: {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export function DerivativesMarket() {
+export function DerivativesMarket({ selectedSymbol }: { selectedSymbol?: string }) {
   const [data, setData] = useState<DerivativesData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

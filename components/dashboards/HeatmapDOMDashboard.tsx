@@ -216,7 +216,7 @@ function drawHeatmap(
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function HeatmapDOMDashboard() {
+export default function HeatmapDOMDashboard({ selectedSymbol }: { selectedSymbol?: string }) {
   const [settings, setSettings] = useState<HeatmapSettings>({
     exchange: 'binance',
     symbol: 'BTCUSDT',

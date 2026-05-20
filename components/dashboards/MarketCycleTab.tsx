@@ -691,7 +691,7 @@ const IndicatorTable: React.FC<{ indicators: Indicator[] }> = ({ indicators }) =
 );
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-const MarketCycleTab: React.FC = () => {
+const MarketCycleTab: React.FC<{ selectedSymbol?: string }> = ({ selectedSymbol }) => {
   const [data,    setData]    = useState<ApiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string | null>(null);

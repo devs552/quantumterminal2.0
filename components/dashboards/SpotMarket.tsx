@@ -675,7 +675,7 @@ const NAV_TABS: NavTab[] = [
    'Spot',
 ];
 
-export function SpotMarket({ cryptos, summary, source, loading, defaultTab = 'Spot' }: SpotMarketProps) {
+export function SpotMarket({ cryptos, summary, source, loading, selectedSymbol, defaultTab = 'Spot' }: SpotMarketProps & { selectedSymbol?: string }) {
   const [activeTab, setActiveTab] = useState<NavTab>(defaultTab);
 
   return (

@@ -987,7 +987,7 @@ const RSITab: React.FC = () => {
 };
 
 // ── Root ───────────────────────────────────────────────────────────────────────
-const LiqRsiDashboard: React.FC = () => {
+const LiqRsiDashboard: React.FC<{ selectedSymbol?: string }> = ({ selectedSymbol }) => {
   const [tab, setTab] = useState<ActiveTab>('liquidations');
   return (
     <>

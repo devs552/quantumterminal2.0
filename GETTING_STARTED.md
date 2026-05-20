@@ -1,4 +1,4 @@
-# Getting Started with Malik's Quantum Terminal
+# Getting Started with Quantum Intelligence Hub
 
 Welcome to the production-ready intelligence platform! This guide will get you up and running in 10 minutes.
 
@@ -42,7 +42,7 @@ Visit `http://localhost:3000` - You'll see the full terminal loaded with mock da
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  ⚡ MALIK'S QUANTUM TERMINAL | Status: OPERATIONAL  │ ← Top Bar
+│  ⚡ QUANTUM INTELLIGENCE HUB | Status: OPERATIONAL  │ ← Top Bar
 ├──────────┬────────────────────────────┬──────────────┤
 │          │                            │              │
 │  GLOBAL  │     MAIN CONTENT AREA      │  AI INSIGHTS │

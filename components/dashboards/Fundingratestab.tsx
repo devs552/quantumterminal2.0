@@ -438,7 +438,7 @@ const FundingTable: React.FC<{ rows: TableRow[] }> = ({ rows }) => {
 };
 
 // ── Main Component ─────────────────────────────────────────────────────────────
-const FundingRatesTab: React.FC = () => {
+const FundingRatesTab: React.FC<{ selectedSymbol?: string }> = ({ selectedSymbol }) => {
   const [data,    setData]    = useState<ApiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string | null>(null);

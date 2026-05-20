@@ -51,7 +51,7 @@ export function TopBar({ onToggleSidebar, onLogout }: TopBarProps) {
 
         <div className="flex items-center gap-3">
           <div className="text-xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-            ⚡ MALIK&apos;S QUANTUM TERMINAL
+            ⚡ QUANTUM INTELLIGENCE HUB
           </div>
 
           <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground font-mono">

@@ -21,7 +21,7 @@ interface TimeSalesEntry extends Trade {
   displayTime: string;
 }
 
-export default function TimeAndSalesDashboard() {
+export default function TimeAndSalesDashboard({ selectedSymbol }: { selectedSymbol?: string }) {
   const [settings, setSettings] = useState<TimeSalesSettings>({
     exchange: 'binance',
     symbol: 'BTCUSDT',

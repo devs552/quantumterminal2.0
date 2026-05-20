@@ -550,7 +550,7 @@ const MACDHeatmap: React.FC<{ coins: CoinMACD[]; tf: TF }> = ({ coins, tf }) => 
 };
 
 // ── Root Component ─────────────────────────────────────────────────────────────
-const MACDDashboard: React.FC = () => {
+const MACDDashboard: React.FC<{ selectedSymbol?: string }> = ({ selectedSymbol }) => {
   const [tf,           setTf]           = useState<TF>('7d');
   const [normalized,   setNormalized]   = useState(true);
   const [overview,     setOverview]     = useState<OverviewData | null>(null);
