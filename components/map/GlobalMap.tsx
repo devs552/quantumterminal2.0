@@ -462,9 +462,18 @@ export function GlobalMap() {
           const isEmpty = !current?.data?.features?.length;
           if (isEmpty) {
            
-             void fetchLayerData(layerDef.id).then(data => {
-  const src = map?.getSource(`source-${layerDef.id}`) as any;
-  src?.setData(data);
+          void fetchLayerData(layerDef.id).then(data => {
+  const currentMap = mapRef.current;
+
+  if (!currentMap) return;
+
+  const source = currentMap.getSource(
+    `source-${layerDef.id}`
+  ) as maplibregl.GeoJSONSource | undefined;
+
+  if (!source) return;
+
+  source.setData(data);
 });
           
           }
