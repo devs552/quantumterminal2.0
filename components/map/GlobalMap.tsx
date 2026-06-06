@@ -6,8 +6,6 @@ import { LayerControl } from './LayerControl';
 import { useMapStore } from '@/store/mapStore';
 import { MAP_LAYERS } from '@/lib/constants';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 interface FeatureProperties {
   id?: string;
   label?: string;
@@ -18,20 +16,18 @@ interface FeatureProperties {
   severity?: number;
   count?: number;
   layerId?: string;
+  country?: string;
+  language?: string;
+  image?: string;
 }
-
-// ── Color per layer ───────────────────────────────────────────────────────────
 
 const LAYER_COLOR_MAP = Object.fromEntries(MAP_LAYERS.map(l => [l.id, l.color]));
 
-// Layers that have real GDELT queries — others use static fallback
 const GDELT_LAYERS = new Set([
   'intel-hotspots', 'conflict-zones', 'military-bases', 'military-activity',
   'nuclear-sites',  'cyber-threats',  'protests',       'weather-alerts',
   'ship-traffic',   'displacement',
 ]);
-
-// ── Static fallback GeoJSON (used for layers without a GDELT query) ───────────
 
 function getStaticFeatures(layerId: string): GeoJSON.FeatureCollection {
   const STATIC: Record<string, GeoJSON.Feature[]> = {
@@ -86,28 +82,16 @@ function getStaticFeatures(layerId: string): GeoJSON.FeatureCollection {
       { type: 'Feature', geometry: { type: 'Point', coordinates: [69.3, 34.5] },   properties: { label: 'Central Asia Throttle', severity: 2 } },
     ],
   };
-
   return { type: 'FeatureCollection', features: STATIC[layerId] ?? [] };
 }
 
-// ── Fetch live GDELT data via our proxy ───────────────────────────────────────
-
 async function fetchLayerData(layerId: string): Promise<GeoJSON.FeatureCollection> {
-  if (!GDELT_LAYERS.has(layerId)) {
-    return getStaticFeatures(layerId);
-  }
-
+  if (!GDELT_LAYERS.has(layerId)) return getStaticFeatures(layerId);
   try {
     const res = await fetch(`/api/map-data?layer=${layerId}`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json() as GeoJSON.FeatureCollection;
-
-    // If GDELT returned nothing, use static fallback
-    if (!data.features || data.features.length === 0) {
-      console.info(`[GlobalMap] GDELT empty for "${layerId}", using static fallback`);
-      return getStaticFeatures(layerId);
-    }
-
+    if (!data.features || data.features.length === 0) return getStaticFeatures(layerId);
     return data;
   } catch (err) {
     console.warn(`[GlobalMap] Failed to fetch "${layerId}":`, err);
@@ -115,24 +99,20 @@ async function fetchLayerData(layerId: string): Promise<GeoJSON.FeatureCollectio
   }
 }
 
-// ── Loading overlay ───────────────────────────────────────────────────────────
-
 function MapLoading() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-[#0A0E27] z-10">
+    <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
       <div className="text-center space-y-3">
-        <div className="inline-block p-4 rounded-lg bg-[#0F1432]/50 border border-[#00D9FF]/20">
-          <div className="text-sm font-mono text-[#00D9FF]">Initializing MapLibre GL…</div>
+        <div className="inline-block px-5 py-3 rounded-xl bg-white border border-gray-200 shadow-sm">
+          <div className="text-sm font-medium text-gray-700">Loading map…</div>
         </div>
         <div className="flex justify-center">
-          <div className="animate-spin w-8 h-8 border-2 border-[#00D9FF] border-t-transparent rounded-full" />
+          <div className="animate-spin w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full" />
         </div>
       </div>
     </div>
   );
 }
-
-// ── Popup component ───────────────────────────────────────────────────────────
 
 interface PopupInfo {
   layerId: string;
@@ -141,77 +121,94 @@ interface PopupInfo {
 }
 
 function FeaturePopup({ info, onClose }: { info: PopupInfo; onClose: () => void }) {
-  const color = LAYER_COLOR_MAP[info.layerId] ?? '#00D9FF';
+  const color = LAYER_COLOR_MAP[info.layerId] ?? '#2563eb';
   const sev   = info.props.severity ?? 1;
   const tone  = parseFloat(info.props.tone ?? '0');
 
   return (
     <div
       className="absolute z-30 pointer-events-auto"
-      style={{ bottom: 80, left: '50%', transform: 'translateX(-50%)', minWidth: 260, maxWidth: 340 }}
+      style={{ bottom: 90, left: '50%', transform: 'translateX(-50%)', minWidth: 280, maxWidth: 360 }}
     >
       <div
-        className="rounded-xl p-4 space-y-2 font-mono text-xs"
+        className="rounded-2xl p-4 space-y-3 text-xs font-sans"
         style={{
-          background: '#0A0E27EE',
-          border:     `1px solid ${color}50`,
-          boxShadow:  `0 0 24px ${color}30`,
-          backdropFilter: 'blur(12px)',
+          background:     '#ffffff',
+          border:         '1px solid #e5e7eb',
+          boxShadow:      '0 8px 30px rgba(0,0,0,0.12)',
         }}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
-          <div className="font-bold text-white text-sm leading-tight">{info.props.label ?? 'Event'}</div>
+          <div
+            className="w-2.5 h-2.5 rounded-full shrink-0 mt-0.5"
+            style={{ background: color }}
+          />
+          <div className="font-semibold text-gray-900 text-sm leading-snug flex-1">
+            {info.props.label ?? 'Event'}
+          </div>
           <button
             onClick={onClose}
-            className="text-[#7A8391] hover:text-white transition-colors shrink-0 text-base leading-none"
+            className="text-gray-400 hover:text-gray-700 transition-colors shrink-0 text-lg leading-none"
           >
             ×
           </button>
         </div>
 
-        {/* Meta */}
-        <div className="space-y-1 text-[10px]">
-          <div className="flex justify-between">
-            <span className="text-[#7A8391]">Source</span>
-            <span style={{ color }}>{info.props.source ?? 'GDELT'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[#7A8391]">Severity</span>
-            <span className="flex gap-0.5">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <span key={i} style={{ color: i < sev ? color : '#2A3050' }}>■</span>
-              ))}
-            </span>
-          </div>
-          {info.props.tone && (
-            <div className="flex justify-between">
-              <span className="text-[#7A8391]">Tone</span>
-              <span style={{ color: tone < 0 ? '#FF1744' : '#0FFF50' }}>
+        {/* Image thumbnail if available */}
+        {info.props.image && (
+          <img
+            src={info.props.image}
+            alt=""
+            className="w-full h-28 object-cover rounded-lg"
+            onError={(e) => (e.currentTarget.style.display = 'none')}
+          />
+        )}
+
+        {/* Meta grid */}
+        <div className="grid grid-cols-2 gap-y-1.5 gap-x-4 text-[11px]">
+          <span className="text-gray-400">Source</span>
+          <span className="text-gray-700 text-right truncate">{info.props.source ?? 'GDELT'}</span>
+
+          <span className="text-gray-400">Severity</span>
+          <span className="flex gap-0.5 justify-end">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <span key={i} style={{ color: i < sev ? color : '#d1d5db' }}>■</span>
+            ))}
+          </span>
+
+          {info.props.tone !== undefined && (
+            <>
+              <span className="text-gray-400">Tone</span>
+              <span
+                className="text-right font-medium"
+                style={{ color: tone < -2 ? '#ef4444' : tone > 2 ? '#16a34a' : '#6b7280' }}
+              >
                 {tone > 0 ? '+' : ''}{tone.toFixed(1)}
               </span>
-            </div>
+            </>
           )}
-          {info.props.count && (
-            <div className="flex justify-between">
-              <span className="text-[#7A8391]">Coverage</span>
-              <span className="text-white">{info.props.count} articles</span>
-            </div>
+
+          {info.props.country && (
+            <>
+              <span className="text-gray-400">Country</span>
+              <span className="text-gray-700 text-right">{info.props.country}</span>
+            </>
           )}
+
           {info.props.publishedAt && (
-            <div className="flex justify-between">
-              <span className="text-[#7A8391]">Updated</span>
-              <span className="text-[#B0B9C1]">
+            <>
+              <span className="text-gray-400">Published</span>
+              <span className="text-gray-500 text-right">
                 {new Date(info.props.publishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
-            </div>
+            </>
           )}
-          <div className="flex justify-between">
-            <span className="text-[#7A8391]">Coords</span>
-            <span className="text-[#B0B9C1]">
-              {info.lngLat.lat.toFixed(3)}, {info.lngLat.lng.toFixed(3)}
-            </span>
-          </div>
+
+          <span className="text-gray-400">Coords</span>
+          <span className="text-gray-500 text-right">
+            {info.lngLat.lat.toFixed(3)}, {info.lngLat.lng.toFixed(3)}
+          </span>
         </div>
 
         {/* CTA */}
@@ -220,28 +217,24 @@ function FeaturePopup({ info, onClose }: { info: PopupInfo; onClose: () => void 
             href={info.props.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="block text-center py-1.5 rounded text-[10px] font-bold tracking-wider transition-all hover:brightness-125"
-            style={{ background: `${color}20`, border: `1px solid ${color}40`, color }}
+            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-[11px] font-semibold tracking-wide transition-all hover:opacity-80"
+            style={{ background: color, color: '#fff' }}
           >
-            READ SOURCE ↗
+            Read article ↗
           </a>
         )}
 
-        {/* GDELT attribution */}
-        <div className="text-[8px] text-[#2A3050] text-center">
-          {GDELT_LAYERS.has(info.layerId) ? 'Live via GDELT GEO 2.0 · 15min cadence' : 'Static reference data'}
+        <div className="text-[9px] text-gray-300 text-center">
+          {GDELT_LAYERS.has(info.layerId) ? 'Live via GDELT DOC 2.0' : 'Static reference data'}
         </div>
       </div>
     </div>
   );
 }
 
-// ── GlobalMap ─────────────────────────────────────────────────────────────────
-
 export function GlobalMap() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<any>(null);
-  const popupRef     = useRef<any>(null);        // maplibre Popup instance
 
   const [mapReady,  setMapReady]  = useState(false);
   const [coords,    setCoords]    = useState({ lat: 20.0, lon: 0.0 });
@@ -261,11 +254,14 @@ export function GlobalMap() {
     return () => clearInterval(id);
   }, []);
 
+  // Zoom helpers
+  const zoomIn  = () => mapRef.current?.zoomIn({ duration: 300 });
+  const zoomOut = () => mapRef.current?.zoomOut({ duration: 300 });
+
   // ── Initialize map ──────────────────────────────────────────────────────────
   useEffect(() => {
     const container = mapContainer.current;
     if (!container) return;
-
     let cancelled = false;
 
     const init = async () => {
@@ -279,23 +275,40 @@ export function GlobalMap() {
             version: 8,
             glyphs:  'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
             sources: {
-              osm: {
-                type:      'raster',
-                tiles:     ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-                tileSize:  256,
-                attribution: '© OpenStreetMap contributors',
+              // CartoDB Positron — clean, light, Google Maps-like
+              carto: {
+                type:  'raster',
+                tiles: [
+                  'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
+                  'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
+                  'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
+                ],
+                tileSize:    256,
+                attribution: '© OpenStreetMap contributors © CARTO',
+                maxzoom:     19,
               },
             },
             layers: [{
-              id:     'osm-layer',
+              id:     'carto-layer',
               type:   'raster',
-              source: 'osm',
-              paint:  { 'raster-opacity': 0.35 },
+              source: 'carto',
+              paint:  {
+                'raster-opacity':   1,
+                'raster-saturation': -0.1,  // very slightly desaturated for crispness
+              },
             }],
           },
-          center:  [0, 20],
-          zoom:    2.5,
+          center:    [0, 20],
+          zoom:      2.5,
+          minZoom:   1.5,
+          maxZoom:   18,
+          // Smooth scroll zoom — same feel as Google Maps
+          scrollZoom: { around: 'center' },
         });
+
+        // Disable map rotation (keeps it Google-like)
+        map.dragRotate.disable();
+        map.touchZoomRotate.disableRotation();
 
         mapRef.current = map;
 
@@ -303,7 +316,6 @@ export function GlobalMap() {
           if (cancelled) return;
           setMapReady(true);
 
-          // Add all layer sources with empty data initially
           MAP_LAYERS.forEach(layerDef => {
             const sourceId = `source-${layerDef.id}`;
             map.addSource(sourceId, {
@@ -311,7 +323,7 @@ export function GlobalMap() {
               data: { type: 'FeatureCollection', features: [] },
             });
 
-            // Circle layer
+            // Main circle
             map.addLayer({
               id:     `layer-${layerDef.id}`,
               type:   'circle',
@@ -319,11 +331,11 @@ export function GlobalMap() {
               paint: {
                 'circle-radius': [
                   'interpolate', ['linear'], ['zoom'],
-                  2, ['interpolate', ['linear'], ['get', 'severity'], 1, 4, 5, 9],
-                  8, ['interpolate', ['linear'], ['get', 'severity'], 1, 8, 5, 18],
+                  2, ['interpolate', ['linear'], ['get', 'severity'], 1, 5, 5, 10],
+                  8, ['interpolate', ['linear'], ['get', 'severity'], 1, 9, 5, 20],
                 ],
                 'circle-color':        layerDef.color,
-                'circle-opacity':      0.85,
+                'circle-opacity':      0.9,
                 'circle-stroke-width': 1.5,
                 'circle-stroke-color': '#ffffff',
               },
@@ -333,7 +345,7 @@ export function GlobalMap() {
               },
             });
 
-            // Pulse ring (slightly larger, low opacity)
+            // Soft halo (replaces dark pulse)
             map.addLayer({
               id:     `pulse-${layerDef.id}`,
               type:   'circle',
@@ -341,11 +353,11 @@ export function GlobalMap() {
               paint: {
                 'circle-radius': [
                   'interpolate', ['linear'], ['zoom'],
-                  2, ['interpolate', ['linear'], ['get', 'severity'], 1, 8, 5, 16],
-                  8, ['interpolate', ['linear'], ['get', 'severity'], 1, 14, 5, 28],
+                  2, ['interpolate', ['linear'], ['get', 'severity'], 1, 10, 5, 18],
+                  8, ['interpolate', ['linear'], ['get', 'severity'], 1, 18, 5, 32],
                 ],
                 'circle-color':   layerDef.color,
-                'circle-opacity': 0.15,
+                'circle-opacity': 0.12,
                 'circle-stroke-width': 0,
               },
               layout: {
@@ -354,28 +366,28 @@ export function GlobalMap() {
               },
             });
 
-            // Label layer
+            // Labels
             map.addLayer({
               id:     `label-${layerDef.id}`,
               type:   'symbol',
               source: sourceId,
               layout: {
-                'text-field':     ['get', 'label'],
-                'text-size':      10,
-                'text-offset':    [0, 1.5],
-                'text-anchor':    'top',
-                'visibility': useMapStore.getState().visibleLayers.includes(layerDef.id)
+                'text-field':  ['get', 'label'],
+                'text-size':   11,
+                'text-offset': [0, 1.6],
+                'text-anchor': 'top',
+                'visibility':  useMapStore.getState().visibleLayers.includes(layerDef.id)
                   ? 'visible' : 'none',
               },
               paint: {
-                'text-color':       '#ffffff',
-                'text-halo-color':  '#000000',
-                'text-halo-width':  1,
+                'text-color':      '#1f2937',
+                'text-halo-color': '#ffffff',
+                'text-halo-width': 1.5,
               },
             });
 
-            // Click handler for circle layer
             map.on('click', `layer-${layerDef.id}`, (e: any) => {
+              e.originalEvent.stopPropagation();
               const feature = e.features?.[0];
               if (!feature) return;
               setPopupInfo({
@@ -385,7 +397,6 @@ export function GlobalMap() {
               });
             });
 
-            // Cursor change on hover
             map.on('mouseenter', `layer-${layerDef.id}`, () => {
               map.getCanvas().style.cursor = 'pointer';
             });
@@ -394,7 +405,7 @@ export function GlobalMap() {
             });
           });
 
-          // Fetch data for initially visible layers
+          // Fetch initially visible layers
           const initial = useMapStore.getState().visibleLayers;
           const counts  = { conflicts: 0, military: 0, hotspots: 0, cyber: 0 };
 
@@ -405,7 +416,6 @@ export function GlobalMap() {
               const src = map.getSource(`source-${layerId}`) as any;
               if (src) src.setData(data);
 
-              // Accumulate live stats
               if (['conflict-zones', 'intel-hotspots'].includes(layerId)) counts.conflicts += data.features.length;
               if (['military-bases', 'military-activity'].includes(layerId)) counts.military += data.features.length;
               if (layerId === 'intel-hotspots') counts.hotspots += data.features.length;
@@ -422,7 +432,6 @@ export function GlobalMap() {
         map.on('zoom', () => {
           if (!cancelled) setZoom(+map.getZoom().toFixed(1));
         });
-        // Click on empty area closes popup
         map.on('click', () => setPopupInfo(null));
 
       } catch (err) {
@@ -439,43 +448,28 @@ export function GlobalMap() {
     };
   }, []);
 
-  // ── Sync visibleLayers: show/hide + lazy-fetch data when toggled on ─────────
+  // ── Sync layer visibility ───────────────────────────────────────────────────
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
 
     MAP_LAYERS.forEach(layerDef => {
-      const vis      = visibleLayers.includes(layerDef.id) ? 'visible' : 'none';
-      const circleId = `layer-${layerDef.id}`;
-      const pulseId  = `pulse-${layerDef.id}`;
-      const labelId  = `label-${layerDef.id}`;
-
-      [circleId, pulseId, labelId].forEach(id => {
+      const vis = visibleLayers.includes(layerDef.id) ? 'visible' : 'none';
+      [`layer-${layerDef.id}`, `pulse-${layerDef.id}`, `label-${layerDef.id}`].forEach(id => {
         if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis);
       });
 
-      // Lazy-fetch: load data the first time a layer becomes visible
       if (vis === 'visible') {
         const src = map.getSource(`source-${layerDef.id}`) as any;
         if (src) {
-          const current = src.serialize();
-          const isEmpty = !current?.data?.features?.length;
+          const isEmpty = !src.serialize()?.data?.features?.length;
           if (isEmpty) {
-           
-          void fetchLayerData(layerDef.id).then(data => {
-  const currentMap = mapRef.current;
-
-  if (!currentMap) return;
-
-  const source = currentMap.getSource(
-    `source-${layerDef.id}`
-  ) as maplibregl.GeoJSONSource | undefined;
-
-  if (!source) return;
-
-  source.setData(data);
-});
-          
+            void fetchLayerData(layerDef.id).then(data => {
+              const m = mapRef.current;
+              if (!m) return;
+              const s = m.getSource(`source-${layerDef.id}`) as any;
+              if (s) s.setData(data);
+            });
           }
         }
       }
@@ -483,10 +477,10 @@ export function GlobalMap() {
   }, [visibleLayers, mapReady]);
 
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden">
+    <div className="relative w-full h-full flex flex-col overflow-hidden bg-white">
       <div
         ref={mapContainer}
-        className="flex-1 relative bg-[#0A0E27]"
+        className="flex-1 relative"
         style={{ minHeight: 400, height: '100%' }}
       >
         {!mapReady && <MapLoading />}
@@ -501,62 +495,77 @@ export function GlobalMap() {
           <MapLegend />
         </div>
 
-        {/* Global Status Panel — live counts from GDELT */}
+        {/* Live Status Panel — light card */}
         <div className="absolute top-4 left-4 z-20">
-          <div className="bg-[#0F1432]/80 backdrop-blur-md p-4 max-w-xs rounded-lg border border-[#00D9FF]/20">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00D9FF] animate-pulse" />
-              <span className="text-xs font-mono text-[#00D9FF] tracking-wider">LIVE GLOBAL STATUS</span>
+          <div className="bg-white/95 backdrop-blur-sm p-4 max-w-xs rounded-2xl border border-gray-200 shadow-md">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs font-semibold text-gray-700 tracking-wide uppercase">
+                Live global status
+              </span>
             </div>
-            <div className="space-y-1 text-xs font-mono text-[#B0B9C1]">
-              <div className="flex justify-between">
-                <span>Active Conflicts:</span>
-                <span className="text-[#FF1744]">{liveStats.conflicts || '—'}</span>
+            <div className="space-y-1.5 text-xs text-gray-600">
+              <div className="flex justify-between items-center">
+                <span>Active conflicts</span>
+                <span className="font-semibold text-red-500">{liveStats.conflicts || '—'}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Military Activity:</span>
-                <span className="text-[#FFD700]">{liveStats.military || '—'}</span>
+              <div className="flex justify-between items-center">
+                <span>Military activity</span>
+                <span className="font-semibold text-amber-500">{liveStats.military || '—'}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Hotspots:</span>
-                <span className="text-[#00D9FF]">{liveStats.hotspots || '—'}</span>
+              <div className="flex justify-between items-center">
+                <span>Hotspots</span>
+                <span className="font-semibold text-blue-500">{liveStats.hotspots || '—'}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Cyber Threats:</span>
-                <span className="text-[#C084FC]">{liveStats.cyber || '—'}</span>
+              <div className="flex justify-between items-center">
+                <span>Cyber threats</span>
+                <span className="font-semibold text-purple-500">{liveStats.cyber || '—'}</span>
               </div>
             </div>
-            <div className="mt-2 pt-2 border-t border-[#1A2040] text-[9px] font-mono text-[#3A4870]">
-              GDELT GEO 2.0 · 15min cadence
+            <div className="mt-3 pt-2.5 border-t border-gray-100 text-[9px] text-gray-300 font-mono">
+              GDELT DOC 2.0 · live feed
             </div>
           </div>
         </div>
 
-        {/* Active layers indicator */}
+        {/* Active layers badge */}
         {visibleLayers.length > 0 && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-            <div className="bg-[#0F1432]/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#00D9FF]/20 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00D9FF] animate-pulse" />
-              <span className="text-xs font-mono text-[#00D9FF]">
+            <div className="bg-white/95 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-gray-200 shadow-sm flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+              <span className="text-xs font-medium text-gray-700">
                 {visibleLayers.length} layer{visibleLayers.length !== 1 ? 's' : ''} active
               </span>
             </div>
           </div>
         )}
 
-        {/* Coordinates & UTC */}
+        {/* Google Maps-style zoom controls */}
+        <div className="absolute bottom-24 right-4 z-20 flex flex-col rounded-lg overflow-hidden border border-gray-200 shadow-md">
+          <button
+            onClick={zoomIn}
+            className="w-9 h-9 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-700 text-xl font-light border-b border-gray-200 transition-colors"
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+          <button
+            onClick={zoomOut}
+            className="w-9 h-9 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-700 text-xl font-light transition-colors"
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+        </div>
+
+        {/* Coordinates bar — bottom right */}
         <div className="absolute bottom-4 right-4 z-20">
-          <div className="bg-[#0F1432]/80 backdrop-blur-md p-3 font-mono text-xs rounded-lg border border-[#00D9FF]/20">
-            <div className="text-[#B0B9C1]">
-              Lat: {coords.lat.toFixed(4)} | Lon: {coords.lon.toFixed(4)}
-            </div>
-            <div className="text-[#00D9FF] mt-1">
-              Zoom: {zoom} | UTC: {utcTime}
-            </div>
+          <div className="bg-white/90 backdrop-blur-sm px-3 py-2 text-xs rounded-lg border border-gray-200 shadow-sm font-mono text-gray-500">
+            {coords.lat.toFixed(4)}, {coords.lon.toFixed(4)} · zoom {zoom} · {utcTime} UTC
           </div>
         </div>
 
-        {/* Click popup */}
+        {/* Popup */}
         {popupInfo && (
           <FeaturePopup info={popupInfo} onClose={() => setPopupInfo(null)} />
         )}

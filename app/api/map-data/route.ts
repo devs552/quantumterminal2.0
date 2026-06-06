@@ -1,112 +1,172 @@
 // app/api/map-data/route.ts
-// Proxies GDELT GEO 2.0 API — completely free, no API key, updates every 15 min
-// Docs: https://blog.gdeltproject.org/gdelt-geo-2-0-api-debuts/
-
 import { NextRequest, NextResponse } from 'next/server';
 
-// ── GDELT query map per layer ID ─────────────────────────────────────────────
-// GDELT GEO 2.0 base: https://api.gdeltproject.org/api/v2/geo/geo
-// Returns GeoJSON FeatureCollection with lat/lon point features
-
-// GDELT requires each OR group to be wrapped in parentheses
 const LAYER_QUERIES: Record<string, string> = {
-  'intel-hotspots':    '(war OR conflict OR airstrike OR offensive)',
-  'conflict-zones':    '(conflict OR attack OR battlefield OR frontline)',
-  'military-bases':    '("military base" OR "naval base" OR "troop deployment")',
-  'military-activity': '("military exercise" OR "troop movement" OR warship)',
-  'nuclear-sites':     '("nuclear plant" OR "uranium enrichment" OR "nuclear weapon")',
-  'cyber-threats':     '(cyberattack OR hacking OR ransomware OR "data breach")',
-  'protests':          '(protest OR demonstration OR riot OR uprising)',
-  'weather-alerts':    '(hurricane OR typhoon OR earthquake OR flood OR wildfire)',
-  'ship-traffic':      '(shipping OR maritime OR "cargo ship" OR strait)',
-  'displacement':      '(refugee OR displacement OR evacuation OR asylum)',
+  'intel-hotspots':    '(war OR conflict OR airstrike)',
+  'conflict-zones':    '(conflict OR attack OR frontline)',
+  'military-bases':    '(military OR naval OR garrison)',
+  'military-activity': '(exercise OR troops OR warship)',
+  'nuclear-sites':     '(nuclear OR reactor OR uranium)',
+  'cyber-threats':     '(cyberattack OR hacking OR ransomware)',
+  'protests':          '(protest OR demonstration OR riot)',
+  'weather-alerts':    '(hurricane OR earthquake OR flood OR wildfire)',
+  'ship-traffic':      '(shipping OR maritime OR tanker)',
+  'displacement':      '(refugee OR evacuation OR asylum)',
 };
-// ── GDELT response shape ──────────────────────────────────────────────────────
 
-interface GDELTFeature {
-  type: 'Feature';
-  geometry: { type: 'Point'; coordinates: [number, number] };
-  properties: {
-    name?: string;
-    url?: string;
-    urlpubtimedate?: string;
-    urltone?: number;
-    domain?: string;
-    count?: number;
-    shareimage?: string;
-    [key: string]: unknown;
-  };
+interface DOCArticle {
+  title?:       string;
+  url?:         string;
+  domain?:      string;
+  language?:    string;
+  sourcecountry?: string;
+  seendate?:    string;
+  tone?:        number;
+  socialimage?: string;
+  // GEO fields — present on some articles
+  latitude?:    number;
+  longitude?:   number;
+  location?:    string;
 }
 
-interface GDELTResponse {
-  type: 'FeatureCollection';
-  features: GDELTFeature[];
+interface DOCResponse {
+  articles?: DOCArticle[];
 }
 
-// ── Fetch from GDELT GEO 2.0 ─────────────────────────────────────────────────
+function buildURL(query: string, maxRows: number): string {
+  const encodedQuery = encodeURIComponent(query)
+    .replace(/%28/g, '(')
+    .replace(/%29/g, ')')
+    .replace(/%22/g, '"');
 
-async function fetchGDELT(
-  query: string,
-  maxRows = 50,
-): Promise<GDELTFeature[]> {
-  const params = new URLSearchParams({
-    query,
-    mode:      'pointdata',
-    maxrows:   String(maxRows),
-    format:    'geojson',
-    timespan:  '1d',           // last 24 hours, updated every 15 min
-    OUTPUTFIELDS: 'name,url,urlpubtimedate,urltone,domain,count,shareimage',
-  });
+  return (
+    `https://api.gdeltproject.org/api/v2/doc/doc` +
+    `?query=${encodedQuery}` +
+    `&mode=ArtList` +
+    `&maxrecords=${Math.min(maxRows, 250)}` +
+    `&format=JSON` +
+    `&timespan=24h` +
+    `&sort=DateDesc`
+  );
+}
 
-  const url = `https://api.gdeltproject.org/api/v2/geo/geo?${params.toString()}`;
+async function fetchDOC(query: string, maxRows = 60): Promise<DOCArticle[]> {
+  const url        = buildURL(query, maxRows);
+  const controller = new AbortController();
+  const timer      = setTimeout(() => controller.abort(), 10_000);
 
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'QuantumTerminal/1.0' },
-    next: { revalidate: 900 }, // cache 15 min server-side (matches GDELT update cadence)
-  });
+  console.log(`[map-data] fetching: ${url}`);
 
-  if (!res.ok) {
-    throw new Error(`GDELT returned ${res.status}`);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MapApp/1.0)' },
+      signal:  controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
   }
+  clearTimeout(timer);
+
+  if (!res.ok) throw new Error(`GDELT returned ${res.status}`);
 
   const text = await res.text();
-
-  // GDELT sometimes returns empty body or non-JSON on no results
   if (!text.trim() || !text.includes('{')) return [];
 
-  const data = JSON.parse(text) as GDELTResponse;
-  return data?.features ?? [];
+  try {
+    const data = JSON.parse(text) as DOCResponse;
+    return data?.articles ?? [];
+  } catch {
+    console.warn('[map-data] non-JSON from GDELT:', text.slice(0, 200));
+    return [];
+  }
 }
 
-// ── Transform GDELT feature → internal GeoJSON feature ───────────────────────
+// DOC 2.0 articles don't always have lat/lon directly.
+// We derive rough coordinates from sourcecountry as a fallback.
+// A small lookup of country centroids covers most cases.
+const COUNTRY_CENTROIDS: Record<string, [number, number]> = {
+  'United States': [37.09, -95.71],
+  'United Kingdom': [55.37, -3.43],
+  'Russia': [61.52, 105.31],
+  'China': [35.86, 104.19],
+  'India': [20.59, 78.96],
+  'France': [46.22, 2.21],
+  'Germany': [51.16, 10.45],
+  'Ukraine': [48.37, 31.16],
+  'Israel': [31.04, 34.85],
+  'Iran': [32.42, 53.68],
+  'Pakistan': [30.37, 69.34],
+  'Afghanistan': [33.93, 67.70],
+  'Syria': [34.80, 38.99],
+  'Iraq': [33.22, 43.67],
+  'Turkey': [38.96, 35.24],
+  'Brazil': [-14.23, -51.92],
+  'Mexico': [23.63, -102.55],
+  'Australia': [-25.27, 133.77],
+  'Japan': [36.20, 138.25],
+  'South Korea': [35.90, 127.76],
+  'North Korea': [40.33, 127.51],
+  'Sudan': [12.86, 30.21],
+  'Ethiopia': [9.14, 40.48],
+  'Nigeria': [9.08, 8.67],
+  'Myanmar': [16.87, 96.19],
+  'Yemen': [15.55, 48.51],
+  'Libya': [26.33, 17.22],
+  'Somalia': [5.15, 46.19],
+  'Venezuela': [6.42, -66.58],
+  'Saudi Arabia': [23.88, 45.07],
+};
 
-function transformFeature(
-  f: GDELTFeature,
+function getCoords(article: DOCArticle): [number, number] | null {
+  // Use direct lat/lon if available
+  if (article.latitude && article.longitude) {
+    return [article.latitude, article.longitude];
+  }
+  // Fall back to country centroid
+  if (article.sourcecountry) {
+    const centroid = COUNTRY_CENTROIDS[article.sourcecountry];
+    if (centroid) {
+      // Add small random jitter so pins don't all stack on same point
+      const jitter = () => (Math.random() - 0.5) * 4;
+      return [centroid[0] + jitter(), centroid[1] + jitter()];
+    }
+  }
+  return null;
+}
+
+function transformArticle(
+  article: DOCArticle,
   layerId: string,
   index: number,
+  coords: [number, number],
 ): GeoJSON.Feature {
-  const tone     = f.properties.urltone ?? 0;
-  // severity: negative tone → higher severity (conflicts are tone-negative)
-  const severity = tone < -5 ? 5 : tone < -2 ? 4 : tone < 0 ? 3 : tone < 2 ? 2 : 1;
+  const tone     = article.tone ?? 0;
+  const absTone  = Math.abs(tone);
+  const severity = absTone > 10 ? 5 : absTone > 6 ? 4 : absTone > 3 ? 3 : absTone > 1 ? 2 : 1;
 
   return {
     type: 'Feature',
-    geometry: f.geometry,
+    geometry: {
+      type:        'Point',
+      coordinates: [coords[1], coords[0]], // GeoJSON is [lng, lat]
+    },
     properties: {
       id:          `${layerId}-${index}`,
-      label:       f.properties.name ?? f.properties.domain ?? 'Event',
-      url:         f.properties.url ?? null,
-      source:      f.properties.domain ?? 'GDELT',
-      publishedAt: f.properties.urlpubtimedate ?? null,
-      tone:        tone.toFixed(2),
+      label:       article.title  ?? article.domain ?? 'Event',
+      url:         article.url    ?? null,
+      source:      article.domain ?? 'GDELT',
+      publishedAt: article.seendate ?? null,
+      tone:        Number(tone.toFixed(2)),
       severity,
       layerId,
-      count:       f.properties.count ?? 1,
+      image:       article.socialimage ?? null,
+      country:     article.sourcecountry ?? null,
+      language:    article.language ?? null,
     },
   };
 }
-
-// ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
   const layerId = request.nextUrl.searchParams.get('layer');
@@ -116,26 +176,30 @@ export async function GET(request: NextRequest) {
   }
 
   const query = LAYER_QUERIES[layerId];
-
   if (!query) {
-    // Unknown layer — return empty GeoJSON (don't error, just no data)
     return NextResponse.json({
-      type: 'FeatureCollection',
-      features: [],
+      type: 'FeatureCollection', features: [],
       meta: { source: 'none', layer: layerId },
     });
   }
 
   try {
-    const raw      = await fetchGDELT(query, 60);
-    const features = raw.map((f, i) => transformFeature(f, layerId, i));
+    const articles = await fetchDOC(query);
+
+    const features = articles
+      .map((article, i) => {
+        const coords = getCoords(article);
+        if (!coords) return null;
+        return transformArticle(article, layerId, i, coords);
+      })
+      .filter(Boolean) as GeoJSON.Feature[];
 
     return NextResponse.json(
       {
-        type:     'FeatureCollection',
+        type: 'FeatureCollection',
         features,
         meta: {
-          source:    'GDELT GEO 2.0',
+          source:    'GDELT DOC 2.0',
           layer:     layerId,
           count:     features.length,
           fetchedAt: new Date().toISOString(),
@@ -145,23 +209,17 @@ export async function GET(request: NextRequest) {
       { headers: { 'Cache-Control': 'public, max-age=900, stale-while-revalidate=300' } },
     );
   } catch (err) {
-    console.error(`[map-data] GDELT fetch failed for layer "${layerId}":`, err);
-
-    // Return empty GeoJSON — map stays functional, just no live data
+    console.error(`[map-data] failed for layer "${layerId}":`, err);
     return NextResponse.json(
       {
-        type:     'FeatureCollection',
-        features: [],
+        type: 'FeatureCollection', features: [],
         meta: {
           source: 'fallback',
           layer:  layerId,
           error:  err instanceof Error ? err.message : 'Unknown error',
         },
       },
-      {
-        status:  200, // still 200 so the map doesn't break
-        headers: { 'Cache-Control': 'no-store' },
-      },
+      { status: 200, headers: { 'Cache-Control': 'no-store' } },
     );
   }
 }
