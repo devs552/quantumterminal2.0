@@ -24,12 +24,6 @@ interface StatCard {
   badgeColor: string;
 }
 
-// ── Demo credentials ──────────────────────────────────────────────────────────
-export const DEMO_CREDENTIALS = {
-  email: 'analyst@qih.io',
-  password: 'Demo@2025',
-};
-
 // ── Keyframe CSS ─────────────────────────────────────────────────────────────
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap');
@@ -895,32 +889,31 @@ export function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
     setTimeout(() => setShake(false), 500);
   };
 
-  const fillDemo = () => {
-    setEmail(DEMO_CREDENTIALS.email);
-    setPassword(DEMO_CREDENTIALS.password);
-    setError('');
-    setSuccess(false);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     setSuccess(false);
 
-    await new Promise(r => setTimeout(r, 980));
-
-    if (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password) {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || 'Invalid operator credentials');
+      }
       setLoading(false);
       setSuccess(true);
-      sessionStorage.setItem('qih_auth', 'true');
       setTimeout(() => {
         setSuccess(false);
         onLogin?.();
       }, 2000);
-    } else {
+    } catch (submitError) {
       setLoading(false);
-      setError('ACCESS DENIED — Invalid operator credentials');
+      setError(`ACCESS DENIED — ${submitError instanceof Error ? submitError.message : 'Sign-in failed'}`);
       triggerShake();
     }
   };
@@ -992,16 +985,6 @@ export function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
           {/* Headline */}
           <div className="qih-headline">Operator Login</div>
           <div className="qih-subline">AUTHENTICATE TO ACCESS THE INTELLIGENCE HUB</div>
-
-          {/* Demo badge */}
-          <button className="qih-demo-btn" onClick={fillDemo} type="button" aria-label="Fill demo credentials">
-            <div className="qih-demo-icon"><ShieldIcon /></div>
-            <div>
-              <div className="qih-demo-label">DEMO ACCESS</div>
-              <div className="qih-demo-creds">analyst@qih.io · Demo@2025</div>
-            </div>
-            <div className="qih-demo-arrow">FILL ↗</div>
-          </button>
 
           {/* Form */}
           <form className="qih-form" onSubmit={handleSubmit} noValidate>

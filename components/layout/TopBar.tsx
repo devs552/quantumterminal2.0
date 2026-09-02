@@ -29,7 +29,6 @@ export function TopBar({ onToggleSidebar, onLogout }: TopBarProps) {
   const { setActiveTab } = useDashboardStore();
 
   const handleLogout = () => {
-    sessionStorage.removeItem('qt_auth');
     onLogout?.();
     // Hard reload so all state is fully cleared
     window.location.reload();

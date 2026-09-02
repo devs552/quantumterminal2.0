@@ -96,20 +96,18 @@ export default function QuantumTerminalPage() {
   const [authChecked, setAuthChecked] = useState(false);
   const [authView,    setAuthView]    = useState<AuthView>('login');
 
-  // Restore session
   useEffect(() => {
-    const stored = sessionStorage.getItem('qt_auth');
-    if (stored === 'true') setAuthed(true);
-    setAuthChecked(true);
+    fetch('/api/auth/me').then(response => {
+      if (response.ok) setAuthed(true);
+    }).finally(() => setAuthChecked(true));
   }, []);
 
   const handleLogin = () => {
-    sessionStorage.setItem('qt_auth', 'true');
     setAuthed(true);
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('qt_auth');
+    void fetch('/api/auth/logout', { method: 'POST' });
     setAuthed(false);
   };
 

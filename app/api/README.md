@@ -38,7 +38,14 @@ This directory contains all API endpoints for the Quantum Terminal application.
 ## Implementation Notes
 
 ### Authentication
-All endpoints require authentication (to be implemented with NextAuth.js or Supabase Auth)
+Authentication uses SQLite-backed users and HTTP-only session cookies:
+- `POST /api/auth/register` - Create a non-admin operator account
+- `POST /api/auth/login` - Sign in and issue a session cookie
+- `GET /api/auth/me` - Restore the current session
+- `POST /api/auth/logout` - Revoke the current session
+- `GET/POST /api/admin/users` - Administrator-only account management; the first account created here must be an administrator
+
+The administrator console is available directly at `/admin` and is intentionally not linked from the main navigation.
 
 ### Rate Limiting
 - Public endpoints: 100 requests/min

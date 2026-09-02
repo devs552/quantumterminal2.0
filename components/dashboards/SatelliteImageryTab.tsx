@@ -170,47 +170,54 @@ const SatelliteImageryTab: React.FC = () => {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // ── Init Leaflet ───────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!mapRef.current || mapObjRef.current) return;
+useEffect(() => {
+  if (!mapRef.current) return;
 
-    // Dynamic import so Next.js SSR doesn't explode
-    import('leaflet').then((L) => {
-      leafletRef.current = L;
+  // ── Guard: if Leaflet already owns this container, bail out ──
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((mapRef.current as any)._leaflet_id != null) return;
 
-      // Fix default icon path issue in Next.js
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-      });
+  import('leaflet').then((L) => {
+    // Double-check after the async import (strict-mode can fire twice)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!mapRef.current || (mapRef.current as any)._leaflet_id != null) return;
 
-      const map = L.map(mapRef.current!, {
-        center:    [20, 10],
-        zoom:      2,
-        zoomControl: true,
-        attributionControl: true,
-      });
+    leafletRef.current = L;
 
-      mapObjRef.current = map;
-
-      // Dark basemap (CartoDB Dark Matter)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap © CARTO',
-        subdomains: 'abcd',
-        maxZoom: 19,
-        opacity: 0.8,
-      }).addTo(map);
+    // Fix default icon path issue in Next.js
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
     });
 
-    return () => {
-      if (mapObjRef.current) {
-        mapObjRef.current.remove();
-        mapObjRef.current = null;
-      }
-    };
-  }, []);
+    const map = L.map(mapRef.current!, {
+      center:      [20, 10],
+      zoom:        2,
+      zoomControl: true,
+      attributionControl: true,
+    });
+
+    mapObjRef.current = map;
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO',
+      subdomains:  'abcd',
+      maxZoom:     19,
+      opacity:     0.8,
+    }).addTo(map);
+  });
+
+  return () => {
+    if (mapObjRef.current) {
+      mapObjRef.current.remove();
+      mapObjRef.current = null;
+    }
+    leafletRef.current = null;
+  };
+}, []);
 
   // ── Update GIBS tile layer when activeLayer changes ────────────────────────
   useEffect(() => {

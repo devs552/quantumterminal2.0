@@ -100,9 +100,20 @@ export function RegisterPage({ onGoToLogin }: RegisterPageProps) {
     }
 
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setLoading(false);
-    setSuccess(true);
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.name, email: form.email, password: form.password, role: form.role }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || 'Could not create account');
+      setSuccess(true);
+    } catch (registerError) {
+      setError(registerError instanceof Error ? registerError.message : 'Could not create account');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputStyle = {
@@ -213,7 +224,6 @@ export function RegisterPage({ onGoToLogin }: RegisterPageProps) {
                   <option value="analyst">Intel Analyst</option>
                   <option value="trader">Markets Operator</option>
                   <option value="risk">Risk Manager</option>
-                  <option value="admin">Administrator</option>
                 </select>
               </div>
 
