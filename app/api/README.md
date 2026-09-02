@@ -43,9 +43,10 @@ Authentication uses SQLite-backed users and HTTP-only session cookies:
 - `POST /api/auth/login` - Sign in and issue a session cookie
 - `GET /api/auth/me` - Restore the current session
 - `POST /api/auth/logout` - Revoke the current session
-- `GET/POST /api/admin/users` - Administrator-only account management; the first account created here must be an administrator
+- `GET/POST /api/admin/users` - Administrator-only account management
 
 The administrator console is available directly at `/admin` and is intentionally not linked from the main navigation.
+For a new installation, set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optionally `ADMIN_NAME` before starting the server. These variables create the first administrator only when the user table is empty; they are never used as a login bypass.
 
 ### Rate Limiting
 - Public endpoints: 100 requests/min

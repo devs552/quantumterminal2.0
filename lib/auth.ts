@@ -90,3 +90,13 @@ export function deleteSession(token: string | undefined) {
 export function listUsers() {
   return (database.prepare('SELECT id, name, email, role, created_at as createdAt FROM users ORDER BY created_at DESC').all() as Array<AuthUser & { createdAt: string }>);
 }
+
+if (countUsers() === 0 && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+  if (process.env.ADMIN_PASSWORD.length < 8) throw new Error('ADMIN_PASSWORD must be at least 8 characters');
+  createUser({
+    name: process.env.ADMIN_NAME || 'Administrator',
+    email: process.env.ADMIN_EMAIL,
+    password: process.env.ADMIN_PASSWORD,
+    role: 'admin',
+  });
+}

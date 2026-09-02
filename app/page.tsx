@@ -67,7 +67,7 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
 
   return (
     <>
-      <TerminalLayout >
+      <TerminalLayout onLogout={onLogout}>
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
           <AlertStreamIndicator status={streamStatus} />
         </div>
@@ -106,8 +106,8 @@ export default function QuantumTerminalPage() {
     setAuthed(true);
   };
 
-  const handleLogout = () => {
-    void fetch('/api/auth/logout', { method: 'POST' });
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
     setAuthed(false);
   };
 

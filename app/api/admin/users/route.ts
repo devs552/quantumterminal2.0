@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { countUsers, createUser, getUserBySession, listUsers, type UserRole } from '@/lib/auth';
+import { createUser, getUserBySession, listUsers, type UserRole } from '@/lib/auth';
 
 async function currentAdmin() {
   const cookieStore = await cookies();
@@ -9,21 +9,19 @@ async function currentAdmin() {
 }
 
 export async function GET() {
-  if (countUsers() === 0) return NextResponse.json({ users: [], setup: true });
   if (!await currentAdmin()) return NextResponse.json({ error: 'Administrator access required' }, { status: 401 });
   return NextResponse.json({ users: listUsers() });
 }
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const isFirstAccount = countUsers() === 0;
-  if (!isFirstAccount && !await currentAdmin()) return NextResponse.json({ error: 'Administrator access required' }, { status: 403 });
+  if (!await currentAdmin()) return NextResponse.json({ error: 'Administrator access required' }, { status: 403 });
   const { name, email, password, role } = body;
   if (typeof name !== 'string' || typeof email !== 'string' || typeof password !== 'string' || !['analyst', 'trader', 'risk', 'admin'].includes(role)) {
     return NextResponse.json({ error: 'Name, email, password, and a valid role are required' }, { status: 400 });
   }
-  if (password.length < 8 || (isFirstAccount && role !== 'admin')) {
-    return NextResponse.json({ error: isFirstAccount ? 'The first account must be an administrator' : 'Password must be at least 8 characters' }, { status: 400 });
+  if (password.length < 8) {
+    return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
   }
   try {
     return NextResponse.json({ user: createUser({ name, email, password, role: role as UserRole }) }, { status: 201 });

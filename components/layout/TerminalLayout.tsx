@@ -8,9 +8,10 @@ import { useDashboardStore } from '@/store/dashboardStore';
 
 interface TerminalLayoutProps {
   children: React.ReactNode;
+  onLogout?: () => void | Promise<void>;
 }
 
-export function TerminalLayout({ children }: TerminalLayoutProps) {
+export function TerminalLayout({ children, onLogout }: TerminalLayoutProps) {
   const {
     sidebarOpen,
     rightPanelOpen,
@@ -19,7 +20,6 @@ export function TerminalLayout({ children }: TerminalLayoutProps) {
     leftSidebarWidth,
     rightPanelWidth,
     isLoading,
-    onLogout,
   } = useDashboardStore();
 
   useEffect(() => {

@@ -8,7 +8,7 @@ import { useDashboardStore } from '@/store/dashboardStore';
 
 interface TopBarProps {
   onToggleSidebar: () => void;
-  onLogout?: () => void;
+  onLogout?: () => void | Promise<void>;
 }
 
 export function TopBar({ onToggleSidebar, onLogout }: TopBarProps) {
@@ -28,8 +28,8 @@ export function TopBar({ onToggleSidebar, onLogout }: TopBarProps) {
   const criticalCount = getCriticalCount();
   const { setActiveTab } = useDashboardStore();
 
-  const handleLogout = () => {
-    onLogout?.();
+  const handleLogout = async () => {
+    await onLogout?.();
     // Hard reload so all state is fully cleared
     window.location.reload();
   };

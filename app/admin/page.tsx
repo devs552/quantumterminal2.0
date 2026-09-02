@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 
 type User = { id: string; name: string | null; email: string; role: string; createdAt?: string };
 
@@ -17,25 +17,26 @@ export default function AdminPage() {
     const response = await fetch('/api/admin/users');
     if (response.ok) { setUsers((await response.json()).users); setAuthenticated(true); }
   };
-  useEffect(() => { void loadUsers(); }, []);
 
   const login = async (event: FormEvent) => {
     event.preventDefault(); setError(''); setLoading(true);
     const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adminLogin) });
+    const body = await response.json().catch(() => ({}));
     setLoading(false);
-    if (!response.ok) { setError((await response.json()).error || 'Sign-in failed'); return; }
+    if (!response.ok) { setError(body.error || 'Sign-in failed'); return; }
+    if (body.user?.role !== 'admin') {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setError('Administrator account required');
+      return;
+    }
     await loadUsers();
   };
 
   const create = async (event: FormEvent) => {
     event.preventDefault(); setError(''); setMessage(''); setLoading(true);
-    const creatingFirstAdmin = users.length === 0;
     const response = await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     const body = await response.json(); setLoading(false);
     if (!response.ok) { setError(body.error || 'Could not create account'); return; }
-    if (creatingFirstAdmin) {
-      await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: form.email, password: form.password }) });
-    }
     setForm({ name: '', email: '', password: '', role: 'analyst' }); setMessage('Account created'); await loadUsers();
   };
 
