@@ -4,7 +4,7 @@ import { adminBypassEnabled, createUser, getUserBySession, listUsers, type AuthU
 
 async function currentAdmin() {
   const cookieStore = await cookies();
-  const user = getUserBySession(cookieStore.get('qt_session')?.value);
+  const user = await getUserBySession(cookieStore.get('qt_session')?.value);
   if (user?.role === 'admin') return user;
   if (adminBypassEnabled()) {
     return {
@@ -19,7 +19,7 @@ async function currentAdmin() {
 
 export async function GET() {
   if (!await currentAdmin()) return NextResponse.json({ error: 'Administrator access required' }, { status: 401 });
-  return NextResponse.json({ users: listUsers() });
+  return NextResponse.json({ users: await listUsers() });
 }
 
 export async function POST(request: Request) {
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
   }
   try {
-    return NextResponse.json({ user: createUser({ name, email, password, role: role as UserRole }) }, { status: 201 });
+    return NextResponse.json({ user: await createUser({ name, email, password, role: role as UserRole }) }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message.includes('UNIQUE')) return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 });
     return NextResponse.json({ error: 'Could not create account' }, { status: 500 });
