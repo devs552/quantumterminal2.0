@@ -87,6 +87,10 @@ export function deleteSession(token: string | undefined) {
   if (token) database.prepare('DELETE FROM sessions WHERE token_hash = ?').run(tokenHash(token));
 }
 
+export function adminBypassEnabled() {
+  return process.env.ADMIN_BYPASS === 'true' || process.env.DEV_ADMIN_BYPASS === 'true';
+}
+
 export function listUsers() {
   return (database.prepare('SELECT id, name, email, role, created_at as createdAt FROM users ORDER BY created_at DESC').all() as Array<AuthUser & { createdAt: string }>);
 }

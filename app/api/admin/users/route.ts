@@ -1,11 +1,20 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { createUser, getUserBySession, listUsers, type UserRole } from '@/lib/auth';
+import { adminBypassEnabled, createUser, getUserBySession, listUsers, type AuthUser, type UserRole } from '@/lib/auth';
 
 async function currentAdmin() {
   const cookieStore = await cookies();
   const user = getUserBySession(cookieStore.get('qt_session')?.value);
-  return user?.role === 'admin' ? user : null;
+  if (user?.role === 'admin') return user;
+  if (adminBypassEnabled()) {
+    return {
+      id: 'dev-admin-bypass',
+      name: 'Administrator',
+      email: process.env.ADMIN_EMAIL || 'admin@local.dev',
+      role: 'admin' as UserRole,
+    } satisfies AuthUser;
+  }
+  return null;
 }
 
 export async function GET() {

@@ -1,10 +1,11 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 type User = { id: string; name: string | null; email: string; role: string; createdAt?: string };
 
 export default function AdminPage() {
+  const adminBypassActive = process.env.NEXT_PUBLIC_ADMIN_BYPASS === 'true';
   const [adminLogin, setAdminLogin] = useState({ email: '', password: '' });
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'admin' });
   const [users, setUsers] = useState<User[]>([]);
@@ -15,8 +16,14 @@ export default function AdminPage() {
 
   const loadUsers = async () => {
     const response = await fetch('/api/admin/users');
-    if (response.ok) { setUsers((await response.json()).users); setAuthenticated(true); }
+    if (response.ok) { const body = await response.json(); setUsers(body.users ?? []); setAuthenticated(true); }
   };
+
+  useEffect(() => {
+    if (adminBypassActive) {
+      void loadUsers();
+    }
+  }, [adminBypassActive]);
 
   const login = async (event: FormEvent) => {
     event.preventDefault(); setError(''); setLoading(true);
