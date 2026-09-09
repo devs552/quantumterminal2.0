@@ -4,6 +4,6 @@ import { getUserBySession } from '@/lib/auth';
 
 export async function GET() {
   const cookieStore = await cookies();
-  const user = getUserBySession(cookieStore.get('qt_session')?.value);
+  const user = await getUserBySession(cookieStore.get('qt_session')?.value);
   return NextResponse.json({ user }, { status: user ? 200 : 401 });
 }

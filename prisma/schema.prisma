@@ -13,14 +13,26 @@ model User {
   email         String     @unique
   name          String?
   password      String?
+  role          String     @default("analyst")
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
-  
+
   dashboards    Dashboard[]
   watchlists    Watchlist[]
   alerts        Alert[]
-  
+  sessions      Session[]
+
   @@map("users")
+}
+
+model Session {
+  tokenHash String @id @map("token_hash")
+  userId    String @map("user_id")
+  expiresAt DateTime @map("expires_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
 }
 
 // Dashboard Configuration
@@ -73,7 +85,7 @@ model Alert {
 // Market Data Snapshots
 model MarketSnapshot {
   id            String     @id @default(cuid())
-  symbol        String     @index
+  symbol        String
   open          Float
   high          Float
   low           Float
@@ -82,28 +94,30 @@ model MarketSnapshot {
   change        Float
   changePercent Float
   timestamp     DateTime   @default(now())
-  
+
+  @@index([symbol])
   @@map("market_snapshots")
 }
 
 // Crypto Data Snapshots
 model CryptoSnapshot {
   id            String     @id @default(cuid())
-  symbol        String     @index
+  symbol        String
   price         Float
   marketCap     Float?
   volume24h     Float?
   change24h     Float?
   dominance     Float?
   timestamp     DateTime   @default(now())
-  
+
+  @@index([symbol])
   @@map("crypto_snapshots")
 }
 
 // Macro Economic Indicators
 model MacroIndicator {
   id            String     @id @default(cuid())
-  indicator     String     @index // "CPI", "GDP", "unemployment", etc.
+  indicator     String // "CPI", "GDP", "unemployment", etc.
   country       String
   value         Float
   unit          String
@@ -112,7 +126,8 @@ model MacroIndicator {
   forecastValue Float?
   previousValue Float?
   timestamp     DateTime   @default(now())
-  
+
+  @@index([indicator])
   @@map("macro_indicators")
 }
 
@@ -143,7 +158,7 @@ model NewsArticle {
 model ConflictEvent {
   id            String     @id @default(cuid())
   eventId       String     @unique
-  date          DateTime   @index
+  date          DateTime
   location      String
   latitude      Float
   longitude     Float
@@ -154,7 +169,8 @@ model ConflictEvent {
   description   String?
   severity      Int        // 1-5 scale
   timestamp     DateTime   @default(now())
-  
+
+  @@index([date])
   @@map("conflict_events")
 }
 
@@ -220,7 +236,7 @@ model IntelligenceFeed {
 // Sector Performance Data
 model SectorPerformance {
   id            String     @id @default(cuid())
-  sector        String     @index
+  sector        String
   performance   Float
   dayHigh       Float
   dayLow        Float
@@ -228,20 +244,22 @@ model SectorPerformance {
   volume        Float?
   topMovers     Json       // Top movers in sector
   timestamp     DateTime   @default(now())
-  
+
+  @@index([sector])
   @@map("sector_performance")
 }
 
 // Commodity Prices
 model CommodityPrice {
   id            String     @id @default(cuid())
-  symbol        String     @index // "GOLD", "OIL", etc.
+  symbol        String // "GOLD", "OIL", etc.
   price         Float
   change        Float
   changePercent Float
   trend         String
   timestamp     DateTime   @default(now())
-  
+
+  @@index([symbol])
   @@map("commodity_prices")
 }
 

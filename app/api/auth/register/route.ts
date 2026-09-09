@@ -11,7 +11,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Choose a valid role and a password of at least 8 characters' }, { status: 400 });
   }
   try {
-    return NextResponse.json({ user: createUser({ name, email, password, role: role as UserRole }) }, { status: 201 });
+    const user = await createUser({ name, email, password, role: role as UserRole });
+    return NextResponse.json({ user }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message.includes('UNIQUE')) return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 });
     return NextResponse.json({ error: 'Could not create account' }, { status: 500 });
