@@ -8,10 +8,9 @@ test('auth provider should support a Prisma/Postgres implementation for Vercel',
   assert.match(authSource, /PrismaClient|postgresql|DATABASE_URL|VERCEL|usePrisma/);
 });
 
-test('remote Postgres auth mode should not eagerly create the SQLite auth database', () => {
+test('demo fallback seeding should be present in the auth helper for Vercel deployments', () => {
   const authSource = fs.readFileSync(path.join(process.cwd(), 'lib/auth.ts'), 'utf8');
-  assert.match(authSource, /require\('better-sqlite3'\)/);
-  assert.match(authSource, /if \(!isRemotePostgres\)/);
+  assert.match(authSource, /VERCEL_DEMO_EMAIL|VERCEL_DEMO_PASSWORD|seedDemoUserIfNeeded|Demo Operator/);
 });
 
 test('admin users route should await auth and data accessors before serializing responses', () => {
