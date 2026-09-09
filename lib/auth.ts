@@ -36,8 +36,8 @@ database.exec(`
   );
 `);
 
-const DEMO_EMAIL = (process.env.VERCEL_DEMO_EMAIL || 'demo@qih.io').trim().toLowerCase();
-const DEMO_PASSWORD = process.env.VERCEL_DEMO_PASSWORD || 'demo12345';
+const DEMO_EMAIL = (process.env.VERCEL_DEMO_EMAIL || process.env.NEXT_PUBLIC_VERCEL_DEMO_EMAIL || 'demo@qih.io').trim().toLowerCase();
+const DEMO_PASSWORD = process.env.VERCEL_DEMO_PASSWORD || process.env.NEXT_PUBLIC_VERCEL_DEMO_PASSWORD || 'demo12345';
 
 function hashPassword(password: string) {
   const salt = randomBytes(16).toString('hex');
@@ -133,11 +133,14 @@ export async function createUser(input: { name: string; email: string; password:
 }
 
 export async function authenticate(email: string, password: string) {
-  await seedDemoUserIfNeeded();
+  const normalizedEmail = email.trim().toLowerCase();
+  if (normalizedEmail === DEMO_EMAIL) {
+    await seedDemoUserIfNeeded();
+  }
 
   if (prisma) {
     try {
-      const row = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+      const row = await prisma.user.findUnique({ where: { email: normalizedEmail } });
       if (!row || !row.password || !verifyPassword(password, row.password)) return null;
       return { id: row.id, name: row.name, email: row.email, role: row.role as UserRole };
     } catch (error) {
@@ -146,7 +149,7 @@ export async function authenticate(email: string, password: string) {
   }
 
   const row = database.prepare('SELECT id, name, email, role, password_hash FROM users WHERE email = ? COLLATE NOCASE')
-    .get(email.trim()) as ({ id: string; name: string | null; email: string; role: UserRole; password_hash: string } | undefined);
+    .get(normalizedEmail) as ({ id: string; name: string | null; email: string; role: UserRole; password_hash: string } | undefined);
   if (!row || !verifyPassword(password, row.password_hash)) return null;
   return publicUser(row);
 }
@@ -227,14 +230,18 @@ export async function listUsers() {
   return (database.prepare('SELECT id, name, email, role, created_at as createdAt FROM users ORDER BY created_at DESC').all() as Array<AuthUser & { createdAt: string }>);
 }
 
-if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && !prisma) {
-  if (process.env.ADMIN_PASSWORD.length < 8) throw new Error('ADMIN_PASSWORD must be at least 8 characters');
-  if ((await countUsers()) === 0) {
-    await createUser({
-      name: process.env.ADMIN_NAME || 'Administrator',
-      email: process.env.ADMIN_EMAIL,
-      password: process.env.ADMIN_PASSWORD,
-      role: 'admin',
-    });
+async function ensureBootstrapAdmin() {
+  if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && !prisma) {
+    if (process.env.ADMIN_PASSWORD.length < 8) throw new Error('ADMIN_PASSWORD must be at least 8 characters');
+    if ((await countUsers()) === 0) {
+      await createUser({
+        name: process.env.ADMIN_NAME || 'Administrator',
+        email: process.env.ADMIN_EMAIL,
+        password: process.env.ADMIN_PASSWORD,
+        role: 'admin',
+      });
+    }
   }
 }
+
+void ensureBootstrapAdmin();
