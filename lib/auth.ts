@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from '@prisma/client';
 import Database from 'better-sqlite3';
 import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
@@ -33,20 +33,6 @@ database.exec(`
 
 const DEMO_EMAIL = process.env.VERCEL_DEMO_EMAIL || 'demo@qih.io';
 const DEMO_PASSWORD = process.env.VERCEL_DEMO_PASSWORD || 'demo12345';
-function seedDemoUserIfNeeded() {
-  const existing = database.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-  if (existing.count > 0) return;
-  database.prepare('INSERT INTO users (id, name, email, role, password_hash) VALUES (?, ?, ?, ?, ?)')
-    .run(randomUUID(), 'Demo Operator', DEMO_EMAIL, 'admin', hashPassword(DEMO_PASSWORD));
-}
-seedDemoUserIfNeeded();onst DEMO_PASSWORD = process.env.VERCEL_DEMO_PASSWORD || 'demo12345';
-function seedDemoUserIfNeeded() {
-  const existing = database.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-  if (existing.count > 0) return;
-  database.prepare('INSERT INTO users (id, name, email, role, password_hash) VALUES (?, ?, ?, ?, ?)')
-    .run(randomUUID(), 'Demo Operator', DEMO_EMAIL, 'admin', hashPassword(DEMO_PASSWORD));
-}
-seedDemoUserIfNeeded();
 
 function hashPassword(password: string) {
   const salt = randomBytes(16).toString('hex');
@@ -64,7 +50,22 @@ function verifyPassword(password: string, stored: string) {
 
 function tokenHash(token: string) {
   return createHash('sha256').update(token).digest('hex');
-}{
+}
+
+function publicUser(row: { id: string; name: string | null; email: string; role: UserRole }): AuthUser {
+  return { id: row.id, name: row.name, email: row.email, role: row.role };
+}
+
+function seedDemoUserIfNeeded() {
+  const existing = database.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
+  if (existing.count > 0) return;
+  database.prepare('INSERT INTO users (id, name, email, role, password_hash) VALUES (?, ?, ?, ?, ?)')
+    .run(randomUUID(), 'Demo Operator', DEMO_EMAIL, 'admin', hashPassword(DEMO_PASSWORD));
+}
+seedDemoUserIfNeeded();
+
+export async function countUsers() {
+  if (prisma) {
     try {
       return await prisma.user.count();
     } catch (error) {
@@ -150,43 +151,6 @@ export async function getUserBySession(token: string | undefined) {
       if (!session || session.expiresAt.getTime() <= Date.now()) return null;
       return { id: session.user.id, name: session.user.name, email: session.user.email, role: session.user.role as UserRole };
     } catch (error) {
-      console.error('Prisma getUserBySession failed; using local SQLite fallback:', error);
-    }
-  }
-
-  const row = database.prepare(`
-    SELECT u.id, u.name, u.email, u.role
-    FROM sessions s JOIN users u ON u.id = s.user_id
-    WHERE s.token_hash = ? AND s.expires_at > ?
-  `).get(tokenHash(token), Date.now()) as ({ id: string; name: string | null; email: string; role: UserRole } | undefined);
-  return row ? publicUser(row) : null;
-}
-
-export async function deleteSession(token: string | undefined) {
-  if (!token) return;
-  if (prisma) {
-    try {
-      await prisma.session.delete({ where: { tokenHash: tokenHash(token) } }).catch(() => undefined);
-      return;
-    } catch (error) {
-      console.error('Prisma deleteSession failed; using local SQLite fallback:', error);
-    }
-  }
-  database.prepare('DELETE FROM sessions WHERE token_hash = ?').run(tokenHash(token));
-}
-
-export function adminBypassEnabled() {
-  return process.env.ADMIN_BYPASS === 'true' || process.env.DEV_ADMIN_BYPASS === 'true';
-}
-
-export async function listUsers() {
-  if (prisma) {
-    try {
-      const rows = await prisma.user.findMany({ orderBy: { createdAt: 'desc' } });
-      return rows.map((row) => ({ id: row.id, name: row.name, email: row.email, role: row.role as UserRole, createdAt: row.createdAt.toISOString() }));
-    } catch (error) {
-      console.error('Prisma listUsers failed; using local SQLite fallback:', error);
-    }
       console.error('Prisma getUserBySession failed; using local SQLite fallback:', error);
     }
   }
