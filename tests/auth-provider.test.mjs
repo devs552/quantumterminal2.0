@@ -8,9 +8,21 @@ test('auth provider should support a Prisma/Postgres implementation for Vercel',
   assert.match(authSource, /PrismaClient|postgresql|DATABASE_URL|VERCEL|usePrisma/);
 });
 
+test('remote Postgres auth mode should not eagerly create the SQLite auth database', () => {
+  const authSource = fs.readFileSync(path.join(process.cwd(), 'lib/auth.ts'), 'utf8');
+  assert.match(authSource, /require\('better-sqlite3'\)/);
+  assert.match(authSource, /if \(!isRemotePostgres\)/);
+});
+
 test('admin users route should await auth and data accessors before serializing responses', () => {
   const routeSource = fs.readFileSync(path.join(process.cwd(), 'app/api/admin/users/route.ts'), 'utf8');
   assert.match(routeSource, /const user = await getUserBySession/);
   assert.match(routeSource, /users: await listUsers\(|users: await listUsers\(/);
   assert.match(routeSource, /user: await createUser\(|user: await createUser\(/);
+});
+
+test('login route should convert provider failures into a clean JSON error response', () => {
+  const routeSource = fs.readFileSync(path.join(process.cwd(), 'app/api/auth/login/route.ts'), 'utf8');
+  assert.match(routeSource, /Authentication service unavailable/);
+  assert.match(routeSource, /console\.error\('Authentication login failed:'/);
 });

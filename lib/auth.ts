@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import Database from 'better-sqlite3';
 import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
@@ -11,25 +10,29 @@ const databaseUrl = String(process.env.DATABASE_URL || '');
 const isRemotePostgres = Boolean(databaseUrl && databaseUrl.startsWith('postgres') && !databaseUrl.includes('localhost') && !databaseUrl.includes('127.0.0.1'));
 const prisma = isRemotePostgres ? new PrismaClient() : null;
 
-const dataDirectory = path.join(process.cwd(), 'data');
-mkdirSync(dataDirectory, { recursive: true });
-const database = new Database(path.join(dataDirectory, 'auth.sqlite'));
-database.pragma('journal_mode = WAL');
-database.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    email TEXT NOT NULL UNIQUE COLLATE NOCASE,
-    role TEXT NOT NULL CHECK (role IN ('analyst', 'trader', 'risk', 'admin')),
-    password_hash TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
-  CREATE TABLE IF NOT EXISTS sessions (
-    token_hash TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    expires_at INTEGER NOT NULL
-  );
-`);
+let database: any = null;
+if (!isRemotePostgres) {
+  const Database = require('better-sqlite3');
+  const dataDirectory = path.join(process.cwd(), 'data');
+  mkdirSync(dataDirectory, { recursive: true });
+  database = new Database(path.join(dataDirectory, 'auth.sqlite'));
+  database.pragma('journal_mode = WAL');
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      name TEXT,
+      email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      role TEXT NOT NULL CHECK (role IN ('analyst', 'trader', 'risk', 'admin')),
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS sessions (
+      token_hash TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at INTEGER NOT NULL
+    );
+  `);
+}
 
 function hashPassword(password: string) {
   const salt = randomBytes(16).toString('hex');
