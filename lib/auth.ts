@@ -48,6 +48,16 @@ function publicUser(row: { id: string; name: string | null; email: string; role:
   return { id: row.id, name: row.name, email: row.email, role: row.role };
 }
 
+export function adminBypassEnabled() {
+  return process.env.ADMIN_BYPASS === 'true' || process.env.DEV_ADMIN_BYPASS === 'true';
+}
+
+export async function listUsers(): Promise<Array<AuthUser & { createdAt: string }>> {
+  return database
+    .prepare('SELECT id, name, email, role, created_at as createdAt FROM users ORDER BY created_at DESC')
+    .all() as Array<AuthUser & { createdAt: string }>;
+}
+
 // --- used by /api/auth/login -----------------------------------------
 export async function authenticate(email: string, password: string): Promise<AuthUser | null> {
   const normalizedEmail = email.trim().toLowerCase();
