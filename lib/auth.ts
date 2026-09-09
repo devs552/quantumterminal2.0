@@ -96,7 +96,6 @@ async function seedDemoUserIfNeeded() {
     }
   }
 }
-void seedDemoUserIfNeeded();
 
 export async function countUsers() {
   if (prisma) {
@@ -134,6 +133,8 @@ export async function createUser(input: { name: string; email: string; password:
 }
 
 export async function authenticate(email: string, password: string) {
+  await seedDemoUserIfNeeded();
+
   if (prisma) {
     try {
       const row = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
