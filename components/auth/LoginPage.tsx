@@ -874,9 +874,6 @@ function LiveStats() {
 }
 
 // ── Main LoginPage component ──────────────────────────────────────────────────
-const DEMO_EMAIL = process.env.NEXT_PUBLIC_VERCEL_DEMO_EMAIL || 'demo@qih.io';
-const DEMO_PASSWORD = process.env.NEXT_PUBLIC_VERCEL_DEMO_PASSWORD || 'demo12345';
-
 export function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
   const [email, setEmail]         = useState('');
   const [password, setPassword]   = useState('');
@@ -1038,38 +1035,6 @@ export function LoginPage({ onLogin, onGoToRegister }: LoginPageProps) {
                 <span>{error}</span>
               </div>
             )}
-
-            <div className="qih-demo-strip">
-              <div className="qih-demo-label">DEMO ACCESS</div>
-              <div className="qih-demo-creds">{DEMO_EMAIL} / {DEMO_PASSWORD}</div>
-              <button
-                className="qih-demo-fill"
-                type="button"
-                onClick={() => {
-                  setEmail(DEMO_EMAIL);
-                  setPassword(DEMO_PASSWORD);
-                  setError('');
-                }}
-              >
-                USE DEMO →
-              </button>
-            </div>
-
-            <div className="qih-demo-strip">
-              <div className="qih-demo-label">DEMO ACCESS</div>
-              <div className="qih-demo-creds">{DEMO_EMAIL} / {DEMO_PASSWORD}</div>
-              <button
-                className="qih-demo-fill"
-                type="button"
-                onClick={() => {
-                  setEmail(DEMO_EMAIL);
-                  setPassword(DEMO_PASSWORD);
-                  setError('');
-                }}
-              >
-                USE DEMO →
-              </button>
-            </div>
 
             <button
               type="submit"
