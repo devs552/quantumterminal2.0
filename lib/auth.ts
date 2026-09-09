@@ -8,7 +8,12 @@ export type UserRole = 'analyst' | 'trader' | 'risk' | 'admin';
 export type AuthUser = { id: string; name: string | null; email: string; role: UserRole };
 
 const databaseUrl = String(process.env.DATABASE_URL || '');
-const isRemotePostgres = Boolean(databaseUrl && databaseUrl.startsWith('postgres') && !databaseUrl.includes('localhost') && !databaseUrl.includes('127.0.0.1'));
+const isRemotePostgres = Boolean(
+  databaseUrl &&
+  (databaseUrl.startsWith('postgres://') || databaseUrl.startsWith('postgresql://')) &&
+  !databaseUrl.includes('localhost') &&
+  !databaseUrl.includes('127.0.0.1')
+);
 const prisma = isRemotePostgres ? new PrismaClient() : null;
 
 const dataDirectory = path.join(process.cwd(), 'data');
@@ -31,7 +36,7 @@ database.exec(`
   );
 `);
 
-const DEMO_EMAIL = process.env.VERCEL_DEMO_EMAIL || 'demo@qih.io';
+const DEMO_EMAIL = (process.env.VERCEL_DEMO_EMAIL || 'demo@qih.io').trim().toLowerCase();
 const DEMO_PASSWORD = process.env.VERCEL_DEMO_PASSWORD || 'demo12345';
 
 function hashPassword(password: string) {
@@ -56,13 +61,42 @@ function publicUser(row: { id: string; name: string | null; email: string; role:
   return { id: row.id, name: row.name, email: row.email, role: row.role };
 }
 
-function seedDemoUserIfNeeded() {
-  const existing = database.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-  if (existing.count > 0) return;
-  database.prepare('INSERT INTO users (id, name, email, role, password_hash) VALUES (?, ?, ?, ?, ?)')
-    .run(randomUUID(), 'Demo Operator', DEMO_EMAIL, 'admin', hashPassword(DEMO_PASSWORD));
+async function seedDemoUserIfNeeded() {
+  if (prisma) {
+    try {
+      const existing = await prisma.user.findUnique({ where: { email: DEMO_EMAIL } });
+      if (existing) return;
+      try {
+        await prisma.user.create({
+          data: {
+            id: randomUUID(),
+            name: 'Demo Operator',
+            email: DEMO_EMAIL,
+            role: 'admin',
+            password: hashPassword(DEMO_PASSWORD),
+          },
+        });
+      } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'P2002') return;
+        throw error;
+      }
+      return;
+    } catch (error) {
+      console.error('Prisma demo seeding failed; falling back to SQLite demo seed:', error);
+    }
+  }
+
+  try {
+    database.prepare('INSERT OR IGNORE INTO users (id, name, email, role, password_hash) VALUES (?, ?, ?, ?, ?)')
+      .run(randomUUID(), 'Demo Operator', DEMO_EMAIL, 'admin', hashPassword(DEMO_PASSWORD));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes('UNIQUE constraint failed')) {
+      console.error('SQLite demo seeding failed:', error);
+    }
+  }
 }
-seedDemoUserIfNeeded();
+void seedDemoUserIfNeeded();
 
 export async function countUsers() {
   if (prisma) {
